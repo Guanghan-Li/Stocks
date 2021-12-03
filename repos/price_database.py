@@ -5,7 +5,7 @@ from alpaca_trade_api.rest import *
 from alpaca_trade_api.rest import REST
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-
+from time import sleep, strftime
 class PricesDatabase:
   def __init__(self, proxy):
     self.proxy = proxy
@@ -35,7 +35,7 @@ class PricesDatabase:
     for date in dates:
       table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
 
-  def setupPrices(self, api, all_assets, start_date='2019-09-11', end_date='2021-09-10'):
+  def setupPrices(self, api, all_assets, start_date='2019-11-20', end_date='2021-11-24'):
     # self.proxy.create_tables([Info])
     # Info.create(last_updated = datetime.datetime.now())
 
@@ -62,7 +62,14 @@ class PricesDatabase:
           self.proxy.create_tables([table])
         print(tables)
         self.loadPrices(whole_data, table)
-
+  
+  def getPriceByDay(self, stock, date: datetime):
+    table = newPrices(stock)
+    date = date + timedelta(hours=4)
+    query = table.select().where(table.date == date)
+    print(query.count())
+    return list(query)
+  
   def updatePrices(self, api):
     assets = self.proxy.get_tables()
     assets.remove('info')

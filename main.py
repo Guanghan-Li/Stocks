@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from repos.report_database import ReportDatabase
 from broker import Broker
-from pnf.pnf import PNF
+from values.portfolio import Portfolio
 
 broker = Broker()
 prices_database = PricesDatabase(price_proxy)
@@ -55,16 +55,17 @@ def rebalance(stocks_to_order):
   
 def getDecadeData(all_assets):
   for i in range(2017, 2021, 2):
-    end_date = date(i+2, 10, 13).isoformat()
-    start_date = date(i, 10, 14).isoformat()
+    end_date = date(i+2, 11, 24).isoformat()
+    start_date = date(i, 11, 23).isoformat()
     print("Getting prices for the date {} -> {}".format(start_date, end_date))
     prices_database.setupPrices(broker.api, all_assets, start_date=start_date, end_date=end_date)
-
-#assets = broker.getAllAssets()
-#prices_database.setupPrices(broker.api, assets)
-#getDecadeData(assets)
-
+'''
+assets = broker.getAllAssets()
+prices_database.setupPrices(broker.api, assets)
+getDecadeData(assets)
+'''
 #report = reports_database.generateReport()
+
 # account = api.get_account()
 # buying_power = float(account.buying_power) // 1
 # stocks_to_order = getOrders(report, buying_power)
@@ -74,12 +75,75 @@ def getDecadeData(all_assets):
 #   print(order)
 
 #executeOrders(orders, order)
+'''
+now = date(2021, 11, 17)
+for i in range(2):
+  print('Making report for the date:', now)
+  reports_database.saveReport(now)
+  now += relativedelta(days=7)
+'''
 
-now = date(2019, 10, 16)
-for i in range(95):
-   print('Making report for the date:', now)
-   reports_database.saveReport(now)
-   now += relativedelta(days=7)
+now = date(2021,9,1)
+def getNewReport(date):
+  return reports_database.getTopResults(date, number_of_results=100)
+
+def getReports(start_date, weeks):
+  reports = []
+  for i in range(weeks):
+    report = getNewReport(start_date)
+    reports.append(report)
+    start_date += relativedelta(days=7)
+  
+  return reports
+
+
+reports = getReports(now, 10)
+first_stock = None
+start_price = 0
+profit = 0
+end_price = 0
+for report in reports:
+  # if first_stock == None:
+  #   first_stock = report.stocks
+  #   entry = report.get(first_stock)
+  #   start_price = entry.open_price
+  print("TREND", report.entries[0].trend)
+
+  # if not first_stock in report.stocks:
+  #   entry = reports_database.getReportByDate(first_stock, report.date)
+  #   end_price = entry.close_price
+  #   profit = end_price - start_price
+  #   print(entry)
+  #   break
+
+#print(first_stock, profit,start_price, end_price)
+
+
+'''
+portfolio = Portfolio()
+position_stocks = [position.stock for position in portfolio.positions]
+report = getNewReport(now)
+orders = []
+free_money = portfolio.availableMoney()
+
+for entry in report.entries:
+  amount_of_stocks = (free_money // 5) // entry.open_price
+  print(entry.stock, amount_of_stocks)
+  if not entry.stock in position_stocks:
+    order = Order(entry.stock, amount_of_stocks, "BUY", entry.open_price)
+    orders.append(order)
+
+order_stocks = [order.stock for order in orders]
+
+for position in portfolio.positions:
+  if not position.stock in order_stocks:
+    order = Order(position.stock, position.amount, "SELL", position.price)
+    orders.insert(0, order)
+
+'''
+
+
+
 
 print("My program took", time.time() - start_time, "to run")
 

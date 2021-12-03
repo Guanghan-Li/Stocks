@@ -3,7 +3,7 @@ from peewee import *
 report_proxy = DatabaseProxy()
 
 def newReport(name):
-  class Reports(Model):
+  class ReportsModel(Model):
     date = DateTimeField()
     stock = CharField()
     open_price = FloatField()
@@ -20,9 +20,9 @@ def newReport(name):
       database = report_proxy
       table_name = name
   
-  return Reports
+  return ReportsModel
 
-class Reports(Model):
+class ReportsModel(Model):
   date = DateTimeField()
   stock = CharField()
   open_price = FloatField()

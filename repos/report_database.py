@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from Calculate.calculations import Calculations
 from Calculate.momentum import Momentum
-from values.report import Entry
+from values.report import Entry, Report
+from time import sleep, strftime
 
 class ReportDatabase:
     def __init__(self, proxy, price_repo):
@@ -17,7 +18,7 @@ class ReportDatabase:
         self.price_repo = price_repo
     
 
-    def setupReports(self, all_assets, start_date='2018-10-03', end_date='2020-10-21'):
+    def setupReports(self, all_assets, start_date='2019-11-20', end_date='2021-11-24'):
       for asset in all_assets:
         print("Loading reports for ", asset)
 
@@ -27,7 +28,7 @@ class ReportDatabase:
         #     self.report_proxy.create_tables([table])
         
 
-        weekly_dates = self.getWeeklyDates('2016-09-07', '2021-09-08')
+        weekly_dates = self.getWeeklyDates('2019-11-20', '2021-11-24')
 
         for date in weekly_dates:
           date = datetime.fromisoformat(date)
@@ -70,11 +71,32 @@ class ReportDatabase:
 
       return dates
 
-    def updatePnf(self, date, stock, column, trend):
+    def filledPNF(self, date, stock):
       table_name = f"{date.year}-{date.month}-{date.day}"
       table = newReport(table_name)
+      report = table.get(table.stock == stock)
+      print(report.stock, report.column, report.trend)
+      if report.column == 'UP' and report.trend == 'UP':
+        return True
+      else:
+        return False
+
+    def updatePnf(self, date, stock, column, trend):
+      table_name = date.strftime("%Y-%m-%d")
+      table = newReport(table_name)
+      
       query = table.update({'column': column, 'trend': trend}).where(table.stock == stock)
       query.execute()
+
+    def getTopResults(self, date, number_of_results=20):
+      table_name = date.strftime("%Y-%m-%d")
+      table = newReport(table_name)
+      ordering = table.acceleration.desc()
+      results = list(table.select().where(table.column == 'UP' and (table.open_price != table.close_price)).order_by(ordering).limit(number_of_results))
+      entries =  [Entry.fromDB(result) for result in results]
+      entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
+      return Report(date, entries, 4)
+
 
     def generateWeeklyReports(self, stock, start, end):
       dates = self.getWeeklyDates(start, end)
@@ -98,6 +120,12 @@ class ReportDatabase:
             report.append(entry)
         
         return report
+
+    def getReportByDate(self, stock, date):
+      table_name = date.strftime("%Y-%m-%d")
+      table = newReport(table_name)
+      entry = list(table.select().where(table.stock == stock))[0]
+      return Entry.fromDB(entry)
 
     def generateEntry(self, stock, current_date):
         prices = self.price_repo.getTwoYearPrices(stock, current_date)
@@ -127,7 +155,8 @@ class ReportDatabase:
 
         current_momentum = Momentum.momentumOneYear(monthly_last_year)
         prev_momentum = Momentum.momentumOneYear(monthly_two_year)
-        acceleration = current_momentum - prev_momentum
+        #acceleration = current_momentum - prev_momentum
+        acceleration = prev_momentum - current_momentum
         price = prices[-1]
         entry = Entry(stock, now, price['open'], price['close'], atr, percent_atr, current_momentum, prev_momentum, acceleration)
         return entry

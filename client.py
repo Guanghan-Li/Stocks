@@ -27,22 +27,31 @@ def prepareData(prices):
         price_data.append(new_price)
     return price_data
 
-current_date = datetime(2019, 10, 16)
-
-@component.on_join
-async def joined(session: Session, details):
-    print("session ready")
-    stocks = prices_database.getAllStocks()
+async def updateReport(session, current_date, stocks):
     for stock in stocks:
+        # if reports_database.filledPNF(current_date, stock):
+        #     continue
         prices = prices_database.getTwoYearPrices(stock, current_date)
         price_data = prepareData(prices)
         if len(price_data) > 500:
             result = await session.call('my.func', stock, price_data)
             column = result['column']
             trend = result['trend']
-            if column == 'UP' and trend == 'UP': 
+            if column == 'UP' and trend == 'UP':
                 reports_database.updatePnf(current_date, stock, column, trend)
                 print("Updated " + stock)
+
+@component.on_join
+async def joined(session: Session, details):
+    current_date = datetime(2021, 11, 17)
+
+    print("session ready")
+    stocks = prices_database.getAllStocks()
+    for i in range(104):
+        print(current_date.isoformat())
+        await updateReport(session, current_date, stocks)
+        current_date += relativedelta(weeks=1)
+        
     
     print("DONE")
     
