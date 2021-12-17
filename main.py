@@ -5,7 +5,7 @@ from alpaca_trade_api.rest import *
 from repos.report_model import *
 from repos.price_database import *
 from Calculate.calculations import Calculations
-from values.report import Entry
+from values.report import Entry, Report
 from repos.price_database import PricesDatabase
 from Calculate.momentum import Momentum
 from values.order import Order
@@ -59,11 +59,11 @@ def getDecadeData(all_assets):
     start_date = date(i, 11, 23).isoformat()
     print("Getting prices for the date {} -> {}".format(start_date, end_date))
     prices_database.setupPrices(broker.api, all_assets, start_date=start_date, end_date=end_date)
-'''
-assets = broker.getAllAssets()
-prices_database.setupPrices(broker.api, assets)
-getDecadeData(assets)
-'''
+
+# assets = broker.getAllAssets()
+# prices_database.setupPrices(broker.api, assets)
+# getDecadeData(assets)
+
 #report = reports_database.generateReport()
 
 # account = api.get_account()
@@ -75,14 +75,14 @@ getDecadeData(assets)
 #   print(order)
 
 #executeOrders(orders, order)
-'''
-now = date(2021, 11, 17)
-for i in range(2):
+
+now = date(2019, 11, 20)
+for i in range(104):
   print('Making report for the date:', now)
   reports_database.saveReport(now)
   now += relativedelta(days=7)
-'''
 
+'''
 now = date(2021,9,1)
 def getNewReport(date):
   return reports_database.getTopResults(date, number_of_results=100)
@@ -98,27 +98,48 @@ def getReports(start_date, weeks):
 
 
 reports = getReports(now, 10)
-first_stock = None
-start_price = 0
-profit = 0
-end_price = 0
-for report in reports:
-  # if first_stock == None:
-  #   first_stock = report.stocks
-  #   entry = report.get(first_stock)
-  #   start_price = entry.open_price
-  print("TREND", report.entries[0].trend)
 
-  # if not first_stock in report.stocks:
-  #   entry = reports_database.getReportByDate(first_stock, report.date)
-  #   end_price = entry.close_price
-  #   profit = end_price - start_price
-  #   print(entry)
-  #   break
+def printReports(reports):
+  for report in reports:
+    print(report.date)
+    for entry in report.entries:
+      print(entry)
+    print("="*10)
 
-#print(first_stock, profit,start_price, end_price)
+def getMoney(reports):
+  first_stock = None
+  start_price = 0
+  profit = 0
+  end_price = 0
+  broke = False
+  for report in reports:
+    if first_stock == None:
+      first_stock = report.stocks[0]
+      entry = report.get(first_stock)
+      start_price = entry.open_price
 
 
+    if not first_stock in report.stocks:
+      entry = reports_database.getReportByDate(first_stock, report.date)
+      end_price = entry.close_price
+      profit = end_price - start_price
+      broke = True
+      break
+  
+  if broke == False:
+    last_date = reports[-1].date
+    entry = reports_database.getReportByDate(first_stock, report.date)
+    end_price = entry.close_price
+    profit = end_price - start_price
+
+
+  print(first_stock, profit,start_price, end_price)
+  print("PROFIT:", profit, f"Still Holding: {not broke}")
+
+printReports(reports)
+getMoney(reports)
+
+'''
 '''
 portfolio = Portfolio()
 position_stocks = [position.stock for position in portfolio.positions]

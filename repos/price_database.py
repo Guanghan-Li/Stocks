@@ -7,10 +7,12 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from time import sleep, strftime
 class PricesDatabase:
-  def __init__(self, proxy):
-    self.proxy = proxy
-    self.proxy.initialize(SqliteDatabase('Data/prices.db'))
-    self.proxy.connect()
+  def __init__(self, proxy, db_path):
+    self.proxy: DatabaseProxy = proxy
+    self.database = SqliteDatabase(db_path)
+    self.database.connect()
+    #self.proxy.initialize(self.database)
+    #self.proxy.connect()
 
   def getAllStocks(self):
     return self.proxy.get_tables()
@@ -33,9 +35,10 @@ class PricesDatabase:
   def loadPrices(self, prices, table):
     dates = [str(date) for date in prices['open'].keys()]
     for date in dates:
-      table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
+      with self.database.atomic():
+        table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
 
-  def setupPrices(self, api, all_assets, start_date='2019-11-20', end_date='2021-11-24'):
+  def setupPrices(self, api, all_assets, thread_name='Default', start_date='2017-11-22', end_date='2021-11-24'):
     # self.proxy.create_tables([Info])
     # Info.create(last_updated = datetime.datetime.now())
 
@@ -54,12 +57,12 @@ class PricesDatabase:
 
       #print(asset, len(whole_data['open']))
 
-      if isinstance(whole_data, DataFrame) and len(whole_data['open']) > 500:
-        print("Loading prices for ", asset)
-        tables = self.proxy.get_tables()
+      if isinstance(whole_data, DataFrame) and len(whole_data['open']) > 980:
+        print("Loading prices for ", asset, "on thread", thread_name)
+        tables = self.database.get_tables()
         table = newPrices(asset)
         if table not in tables:
-          self.proxy.create_tables([table])
+          self.database.create_tables([table])
         print(tables)
         self.loadPrices(whole_data, table)
   

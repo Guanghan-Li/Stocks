@@ -15,13 +15,12 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from repos.report_database import ReportDatabase
 
-
 class Broker:
-  def __init__(self):
+  def __init__(self, account_info):
     self.api = REST(
-      'PKG77R4EUWQ76WC12PI5',
-      'YvNim9ia5ov4oJ7WHLv6ElPYQMcMTZMMTP3pLjtp',
-      'https://paper-api.alpaca.markets'
+      account_info['public_key'],
+      account_info['private_key'],
+      account_info['api_link']
     )
 
   def getAllAssets(self):

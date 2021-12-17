@@ -43,7 +43,7 @@ async def updateReport(session, current_date, stocks):
 
 @component.on_join
 async def joined(session: Session, details):
-    current_date = datetime(2021, 11, 17)
+    current_date = datetime(2019, 11, 20)
 
     print("session ready")
     stocks = prices_database.getAllStocks()

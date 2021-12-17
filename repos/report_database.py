@@ -92,7 +92,8 @@ class ReportDatabase:
       table_name = date.strftime("%Y-%m-%d")
       table = newReport(table_name)
       ordering = table.acceleration.desc()
-      results = list(table.select().where(table.column == 'UP' and (table.open_price != table.close_price)).order_by(ordering).limit(number_of_results))
+      results = list(table.select().where(table.column == "UP", table.open_price != table.close_price).order_by(ordering).limit(number_of_results))
+      #results = list(table.select().where(table.column == "UP" and 1 == 1).limit(number_of_results))
       entries =  [Entry.fromDB(result) for result in results]
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
       return Report(date, entries, 4)
@@ -125,6 +126,7 @@ class ReportDatabase:
       table_name = date.strftime("%Y-%m-%d")
       table = newReport(table_name)
       entry = list(table.select().where(table.stock == stock))[0]
+      print(entry.stock)
       return Entry.fromDB(entry)
 
     def generateEntry(self, stock, current_date):
