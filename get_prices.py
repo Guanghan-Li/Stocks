@@ -15,6 +15,9 @@ from dateutil.relativedelta import relativedelta
 from repos.report_database import ReportDatabase
 from broker import Broker
 from values.portfolio import Portfolio
+import janus
+
+
 
 account_info1 = {
       "public_key": 'PKG77R4EUWQ76WC12PI5',
@@ -52,28 +55,30 @@ asset_group9 = amount[9]
 # asset_group0 = amount1[0]
 # asset_group1 = amount2[1]
 
-def secondMain():
+def thread1Main():
   loop = asyncio.new_event_loop()
   asyncio.set_event_loop(loop)
   pd = PricesDatabase(DatabaseProxy(), db_path="Data/prices2.db")
-  #pd.setupPrices(broker2.api, asset_group1[:6], thread_name="Thread 1")
-  print("PAUSING")
-  while True:
-    pass
+  pd.setupPrices(broker2.api, asset_group1[:6], thread_name="Thread 1")
+
+def thread2Main():
+  loop = asyncio.new_event_loop()
+  asyncio.set_event_loop(loop)
 
 def main():
   loop = asyncio.get_event_loop()
-  prices_database = PricesDatabase(price_proxy, "Data/prices4.db")
-  prices_database.setupPrices(broker.api, asset_group0[:6], thread_name="Thread 0")
+  pd = broker.getPriceData(['AAPL'])
+  print(pd)
+  #prices_database = PricesDatabase(price_proxy, "Data/prices.db")
+  #prices_database.setupPrices(broker.api, asset_group0[:6], thread_name="Thread 0")
 
-thread = threading.Thread(target=secondMain)
-thread.setDaemon(True)
-thread.start()
+# thread = threading.Thread(target=secondMain)
+# thread.setDaemon(True)
+# thread.start()
 
 # thread2 = threading.Thread(target=main)
 # thread2.setDaemon(True)
 # thread2.start()
-
-while True: pass
+main()
 #main()
 #prices_database.setupPrices(broker.api, assets)

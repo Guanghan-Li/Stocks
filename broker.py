@@ -30,6 +30,18 @@ class Broker:
     #every_asset = [a.symbol for a in active_assets]
     return nasdaq_assets+nyse_assets
 
+  def getPriceData(self, all_assets, start_date='2017-11-22', end_date='2021-11-24'):
+    for asset in all_assets:
+      whole_data = None
+
+      try:
+        whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw').df
+      except:
+        print("CANNOT GET ASSET:", asset)
+        pass
+    
+    return whole_data
+
   def getLongStocks(self, report, amount):
     report.sort(key=lambda entry: entry.acceleration, reverse = True)
     stocks = report[:20]
