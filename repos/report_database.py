@@ -11,9 +11,9 @@ from values.report import Entry, Report
 from time import sleep, strftime
 
 class ReportDatabase:
-    def __init__(self, proxy, price_repo):
+    def __init__(self, proxy, price_repo, name="Data/reports.db"):
         self.proxy = report_proxy
-        self.proxy.initialize(SqliteDatabase('Data/reports.db'))
+        self.proxy.initialize(SqliteDatabase(name))
         self.proxy.connect()
         self.price_repo = price_repo
     
@@ -35,14 +35,15 @@ class ReportDatabase:
           self.saveReport(date)
 
     def saveEntry(self, entry):
-      date = entry.date.isoformat()
+
+      date = entry.date.strftime("%Y-%m-%d")
       table = newReport(date)
       tables = self.proxy.get_tables()
       if table not in tables:
         self.proxy.create_tables([table])
 
       table.create(
-        date = entry.date,
+        date = entry.date.strftime("%Y-%m-%d"),
         stock = entry.stock,
         open_price = entry.open_price,
         close_price = entry.close_price,
@@ -50,8 +51,13 @@ class ReportDatabase:
         percent_atr = entry.percent_atr,
         two_year_momentum = entry.prev_momentum,
         one_year_momentum = entry.current_momentum,
-        acceleration = entry.acceleration
+        acceleration = entry.acceleration,
+        rsi14 = entry.rsi14,
+        rsi28 = entry.rsi28,
+        column = entry.column,
+        trend = entry.trend
       )
+      print(f"Saved {entry.stock} on {entry.date.strftime('%Y-%m-%d')}")
 
     def saveReport(self, date):
       all_stocks = self.price_repo.getAllStocks()
@@ -98,6 +104,16 @@ class ReportDatabase:
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
       return Report(date, entries, 4)
 
+    def getReports(self, date, number_of_results):
+      table_name = date.strftime("%Y-%m-%d")
+      table = newReport(table_name)
+      ordering = table.acceleration.asc()
+      order = (table.rsi28 - table.rsi14).desc()
+      
+      results = list(table.select().where(table.rsi14 < 30, table.rsi28 < 50).order_by(ordering).limit(number_of_results))
+      print("Amount of results:", len(results))
+      entries =  [Entry.fromDB(result) for result in results]
+      return Report(date, entries, number_of_results)
 
     def generateWeeklyReports(self, stock, start, end):
       dates = self.getWeeklyDates(start, end)
@@ -129,10 +145,19 @@ class ReportDatabase:
       print(entry.stock)
       return Entry.fromDB(entry)
 
-    def generateEntry(self, stock, current_date):
-        prices = self.price_repo.getTwoYearPrices(stock, current_date)
-        if len(prices) < 500:
-          return None
+    def getPricesByMonth(self, prices, current_date):
+      result = []
+      for price in prices:
+        price_date = datetime.fromisoformat(price['date'])
+        if price_date.year == current_date.year and price_date.month == current_date.month:
+          result.append(price)
+      
+      return result
+
+
+    def generateEntry(self, stock, prices, current_date):
+        # if len(prices) < 500:
+        #   return None
 
         current_year = current_date.year
         now = current_date
@@ -146,19 +171,34 @@ class ReportDatabase:
         two_year = last_year - relativedelta(weeks=52)
 
         while current_date > last_year:
-          month = self.price_repo.getPricesByMonth(stock, current_date)
+          month = self.getPricesByMonth(prices, current_date)
           monthly_last_year.append(month)
           current_date = current_date - relativedelta(weeks=4)
 
         while current_date > two_year:
-          month = self.price_repo.getPricesByMonth(stock, current_date)
+          month = self.getPricesByMonth(prices, current_date)
           monthly_two_year.append(month)
           current_date = current_date - relativedelta(weeks=4)
 
         current_momentum = Momentum.momentumOneYear(monthly_last_year)
         prev_momentum = Momentum.momentumOneYear(monthly_two_year)
+
+        rsi14 = Momentum.calculateRsis(prices, 14)[-1]
+        rsi28= Momentum.calculateRsis(prices, 28)[-1]
         #acceleration = current_momentum - prev_momentum
         acceleration = prev_momentum - current_momentum
         price = prices[-1]
-        entry = Entry(stock, now, price['open'], price['close'], atr, percent_atr, current_momentum, prev_momentum, acceleration)
+        entry = Entry(
+          stock,
+          now,
+          price['open'],
+          price['close'],
+          atr,
+          percent_atr,
+          current_momentum,
+          prev_momentum,
+          acceleration,
+          rsi14,
+          rsi28
+        )
         return entry

@@ -53,16 +53,9 @@ def rebalance(stocks_to_order):
   orders = sell_orders + buy_orders
   return orders
   
-def getDecadeData(all_assets):
-  for i in range(2017, 2021, 2):
-    end_date = date(i+2, 11, 24).isoformat()
-    start_date = date(i, 11, 23).isoformat()
-    print("Getting prices for the date {} -> {}".format(start_date, end_date))
-    prices_database.setupPrices(broker.api, all_assets, start_date=start_date, end_date=end_date)
 
-# assets = broker.getAllAssets()
-# prices_database.setupPrices(broker.api, assets)
-# getDecadeData(assets)
+
+
 
 #report = reports_database.generateReport()
 

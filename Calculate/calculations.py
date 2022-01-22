@@ -21,3 +21,5 @@ class Calculations:
       true_ranges.append(Calculations.trueRange(high, low, close))
 
     return sum(true_ranges) / time_period
+  
+

@@ -35,39 +35,38 @@ class PricesDatabase:
     result = list(table.select().dicts().where(table.date.between(start, end)))
     return result
 
+  def dfToDict(self, date, prices):
+    return {
+      "date":date,
+      "open": prices['open'][date],
+      "close": prices['close'][date],
+      "high": prices['high'][date],
+      "low": prices['low'][date]
+    }
+
   def loadPrices(self, prices, table):
     dates = [str(date) for date in prices['open'].keys()]
-    for date in dates:
-      with self.proxy.atomic():
-        table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
+    data = [self.dfToDict(date, prices) for date in dates]
+    with self.proxy.atomic():
+      for day in data:
+        table.create(**day)
 
-  def setupPrices(self, api, all_assets, thread_name='Default', start_date='2017-11-22', end_date='2021-11-24'):
-    # self.proxy.create_tables([Info])
-    # Info.create(last_updated = datetime.datetime.now())
+    # for date in dates:
+    #   with self.proxy.atomic():
+    #     table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
 
-    # db_tables = self.proxy.get_tables()
-    # tables = [newPrices(asset) for asset in all_assets if asset not in db_tables]
-    # self.proxy.create_tables(tables)
-
-    for asset in all_assets:
-      whole_data = None
-
-      try:
-        whole_data = api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw').df
-      except:
-        print("CANNOT GET ASSET:", asset)
-        pass
-
-      #print(asset, len(whole_data['open']))
-
+  async def setupPrices(self, asset, whole_data):
       if isinstance(whole_data, DataFrame) and len(whole_data['open']) > 980:
-        print("Loading prices for ", asset, "on thread", thread_name)
+        #print("Loading prices for ", asset)
         tables = self.proxy.get_tables()
         table = newPrices(asset)
         if table not in tables:
           self.proxy.create_tables([table])
-        print(tables)
+        print(len(tables))
         self.loadPrices(whole_data, table)
+      elif len(whole_data['open']) < 980:
+       #print(f"{asset} not enough data")
+       pass
   
   def getPriceByDay(self, stock, date: datetime):
     table = newPrices(stock)

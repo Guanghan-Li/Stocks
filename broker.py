@@ -1,4 +1,5 @@
 from timeit import *
+from time import sleep
 import os, math, subprocess, time
 import mplfinance as mpf
 from alpaca_trade_api.rest import *
@@ -29,17 +30,20 @@ class Broker:
     nyse_assets = [a.symbol for a in active_assets if a.exchange == 'NYSE']
     #every_asset = [a.symbol for a in active_assets]
     return nasdaq_assets+nyse_assets
-
-  def getPriceData(self, all_assets, start_date='2017-11-22', end_date='2021-11-24'):
+  now = datetime.now()
+  def getPriceData(self, all_assets, queue, thread_name, start_date='2017-11-28', end_date='2022-01-21'):
     for asset in all_assets:
       whole_data = None
 
       try:
+        #print(f"{thread_name} getting prices for {asset}")
         whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw').df
+        queue.put([asset, whole_data])
       except:
-        print("CANNOT GET ASSET:", asset)
+        #print(f"{thread_name} CANNOT GET ASSET:", asset)
         pass
     
+    sleep(0.01)
     return whole_data
 
   def getLongStocks(self, report, amount):

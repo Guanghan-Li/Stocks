@@ -15,6 +15,8 @@ def newReport(name):
     acceleration = FloatField()
     column = CharField(default='')
     trend = CharField(default='')
+    rsi14 = FloatField()
+    rsi28 = FloatField()
 
     class Meta:
       database = report_proxy
@@ -34,6 +36,8 @@ class ReportsModel(Model):
   acceleration = FloatField()
   column = CharField(default='')
   trend = CharField(default='')
+  rsi14 = FloatField()
+  rsi28 = FloatField()
 
 
   class Meta:

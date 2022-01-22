@@ -31,54 +31,76 @@ account_info2 = {
   "api_link": "https://paper-api.alpaca.markets"
 }
 
+account_info3 = {
+  "public_key": "PKZBZND7F6PH39SMHJPQ",
+  "private_key": "2gENBEvKNSEss7zWkY8N290eIANnv32iUeuHPRFy",
+  "api_link": "https://paper-api.alpaca.markets"
+}
+
+account_info4 = {
+  "public_key": "PKQMDMXG2T2FMQ8AZOY5",
+  "private_key": "YVdUWYT7hTVPxpkuwDFi07i3Ib8E1AceHPZha46a",
+  "api_link": "https://paper-api.alpaca.markets"
+}
+
+account_info5 = {
+  "public_key": "PKJMSG502IDF8X3FZQPO",
+  "private_key": "ovPyDR5oebP13KoDNolHXus2nLjHo4PERENLUNNj",
+  "api_link": "https://paper-api.alpaca.markets"
+}
+
+
 broker = Broker(account_info1)
 broker2 = Broker(account_info2)
+broker3 = Broker(account_info3)
+broker4 = Broker(account_info4)
+broker5 = Broker(account_info5)
+
+
+count = 0
 
 assets = broker.getAllAssets()
+asset_amount = len(assets)
 #assets2 = broker2.getAllAssets()
 amount = list(zip(*[iter(assets)]*(len(assets)//10)))
 
-#amount = list(zip(*[iter(assets)]*(len(assets)//1)))
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+brokers = [broker,broker2,broker3,broker4,broker5]
+
+def createThreadFunc(thread_name):
+  def threadFunc(queue, asset_group, broker):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    broker.getPriceData(asset_group, queue.sync_q, thread_name)
+    print(f"{thread_name} Done")
+  
+  return threadFunc
+
+async def main():
+  queue = janus.Queue()
+
+  for i in range(10):
+    threadFunc = createThreadFunc(f"Thread {i}")
+    broker = brokers[i//2]
+    thread = threading.Thread(target=threadFunc, args=[queue, amount[i], broker])
+    thread.setDaemon(True)
+    thread.start()
 
 
-asset_group0 = amount[0]
-asset_group1 = amount[1]
-asset_group2 = amount[2]
-asset_group3 = amount[3]
-asset_group4 = amount[4]
-asset_group5 = amount[5]
-asset_group6 = amount[6]
-asset_group7 = amount[7]
-asset_group8 = amount[8]
-asset_group9 = amount[9]
+  prices_database = PricesDatabase(price_proxy, "Data/prices3.db")
+  for i in range(asset_amount):
+    asset, data = await queue.async_q.get()
+    asyncio.create_task(prices_database.setupPrices(asset, data))
+    #await prices_database.setupPrices(asset, data)
 
-# asset_group0 = amount1[0]
-# asset_group1 = amount2[1]
 
-def thread1Main():
-  loop = asyncio.new_event_loop()
-  asyncio.set_event_loop(loop)
-  pd = PricesDatabase(DatabaseProxy(), db_path="Data/prices2.db")
-  pd.setupPrices(broker2.api, asset_group1[:6], thread_name="Thread 1")
 
-def thread2Main():
-  loop = asyncio.new_event_loop()
-  asyncio.set_event_loop(loop)
-
-def main():
-  loop = asyncio.get_event_loop()
-  pd = broker.getPriceData(['AAPL'])
-  print(pd)
-  #prices_database = PricesDatabase(price_proxy, "Data/prices.db")
-  #prices_database.setupPrices(broker.api, asset_group0[:6], thread_name="Thread 0")
-
-# thread = threading.Thread(target=secondMain)
-# thread.setDaemon(True)
-# thread.start()
 
 # thread2 = threading.Thread(target=main)
 # thread2.setDaemon(True)
 # thread2.start()
-main()
+asyncio.run(main())
 #main()
 #prices_database.setupPrices(broker.api, assets)
