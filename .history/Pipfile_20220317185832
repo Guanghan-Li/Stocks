@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+peewee = ">=3.14"
+python-dotenv = "~=0.17"
+autobahn = {version = ">=21.3.1", extras = ["encryption", "serialization"]}
+invoke = "~=1.5"
+sty = "==1.0.0rc1"
+schema = "~=0.7.4"
+pymonad = "~=2.4.0"
+
+[dev-packages]
+pytest = "~=6.2"
+autopep8 = "~=1.5"
+
+
+[requires]
+python_version = "3.10"

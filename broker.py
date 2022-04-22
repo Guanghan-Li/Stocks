@@ -30,21 +30,23 @@ class Broker:
     nyse_assets = [a.symbol for a in active_assets if a.exchange == 'NYSE']
     #every_asset = [a.symbol for a in active_assets]
     return nasdaq_assets+nyse_assets
-  now = datetime.now()
-  def getPriceData(self, all_assets, queue, thread_name, start_date='2017-11-28', end_date='2022-01-21'):
-    for asset in all_assets:
-      whole_data = None
 
-      try:
-        #print(f"{thread_name} getting prices for {asset}")
-        whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw').df
-        queue.put([asset, whole_data])
-      except:
-        #print(f"{thread_name} CANNOT GET ASSET:", asset)
-        pass
-    
-    sleep(0.01)
-    return whole_data
+  now = datetime.now()
+
+  def getPriceData(self, asset, start_date: datetime, end_date: datetime, thread_name=""):
+    start_date = start_date.strftime("%Y-%m-%d")
+    end_date = end_date.strftime("%Y-%m-%d")
+    message = {}
+    print(f"{thread_name} getting prices for {asset}")
+    whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw')
+    whole_data = whole_data.df
+    print(f"{thread_name} Got asset", asset)
+    message = {
+      "asset": asset,
+      "data": whole_data,
+      "date": end_date
+    }
+    return message
 
   def getLongStocks(self, report, amount):
     report.sort(key=lambda entry: entry.acceleration, reverse = True)

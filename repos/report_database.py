@@ -9,16 +9,27 @@ from Calculate.calculations import Calculations
 from Calculate.momentum import Momentum
 from values.report import Entry, Report
 from time import sleep, strftime
+from peewee import FieldAccessor
+
+from values.strategy import *
 
 class ReportDatabase:
     def __init__(self, proxy, price_repo, name="Data/reports.db"):
         self.proxy = report_proxy
-        self.proxy.initialize(SqliteDatabase(name))
+        #self.proxy.initialize(SqliteDatabase(name))
+        self.database = PostgresqlDatabase(
+          "reports",
+          user="postgres",
+          password="stock",
+          host="localhost",
+          port=5433
+        )
+        self.proxy.initialize(self.database)
         self.proxy.connect()
         self.price_repo = price_repo
     
 
-    def setupReports(self, all_assets, start_date='2019-11-20', end_date='2021-11-24'):
+    def setupReports(self, all_assets, start_date='2019-11-20', end_date='2022-02-17'):
       for asset in all_assets:
         print("Loading reports for ", asset)
 
@@ -28,7 +39,7 @@ class ReportDatabase:
         #     self.report_proxy.create_tables([table])
         
 
-        weekly_dates = self.getWeeklyDates('2019-11-20', '2021-11-24')
+        weekly_dates = self.getWeeklyDates('2019-11-20', '2022-02-17')
 
         for date in weekly_dates:
           date = datetime.fromisoformat(date)
@@ -102,16 +113,22 @@ class ReportDatabase:
       #results = list(table.select().where(table.column == "UP" and 1 == 1).limit(number_of_results))
       entries =  [Entry.fromDB(result) for result in results]
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
-      return Report(date, entries, 4)
+      return Report(date, entries, number_of_results)
 
-    def getReports(self, date, number_of_results):
+    def getReports(self, date, strategy: Strategy):
+      number_of_results = 10
       table_name = date.strftime("%Y-%m-%d")
       table = newReport(table_name)
-      ordering = table.acceleration.asc()
-      order = (table.rsi28 - table.rsi14).desc()
-      
-      results = list(table.select().where(table.rsi14 < 30, table.rsi28 < 50).order_by(ordering).limit(number_of_results))
-      print("Amount of results:", len(results))
+
+      ordering = Sorting.getFunc(table, strategy.initial_sort)
+      secondary_ordering = Sorting.getFunc(table, strategy.secondary_sort)
+
+      #query = table.select().where(table.rsi14 < 50, table.rsi28 < 50, table.rsi28 - table.rsi14 < 4, table.one_year_momentum > 2.3, table.one_year_momentum< 4)
+      filters = [Filter.getFunc(table, filter) for filter in strategy.filters]
+      query = table.select().where(*filters)
+      query = query.order_by(ordering).limit(strategy.cutoff.value)
+      query = query.order_by(secondary_ordering).limit(strategy.portfolio_size.value)
+      results = list(query)
       entries =  [Entry.fromDB(result) for result in results]
       return Report(date, entries, number_of_results)
 
@@ -137,6 +154,9 @@ class ReportDatabase:
             report.append(entry)
         
         return report
+    
+    def generateRepotForStock(self, stock, date):
+      pass
 
     def getReportByDate(self, stock, date):
       table_name = date.strftime("%Y-%m-%d")
@@ -145,7 +165,8 @@ class ReportDatabase:
       print(entry.stock)
       return Entry.fromDB(entry)
 
-    def getPricesByMonth(self, prices, current_date):
+    @staticmethod
+    def getPricesByMonth(prices, current_date):
       result = []
       for price in prices:
         price_date = datetime.fromisoformat(price['date'])
@@ -154,31 +175,37 @@ class ReportDatabase:
       
       return result
 
-
-    def generateEntry(self, stock, prices, current_date):
-        # if len(prices) < 500:
-        #   return None
-
+    @staticmethod
+    def generateEntry(stock, prices, current_date):
+        print("generateEntry", stock, current_date)
         current_year = current_date.year
         now = current_date
-        atr = round(Calculations.averageTrueRange(prices, len(prices)), 2)
-        close_price = prices[-1]['close']
-        percent_atr = (atr / close_price) * 100
+        # atr = round(Calculations.averageTrueRange(prices, len(prices)), 2)
+        # close_price = prices[-1]['close']
+        # percent_atr = (atr / close_price) * 100
 
         monthly_last_year = []
         monthly_two_year = []
         last_year = current_date - relativedelta(weeks=52)
         two_year = last_year - relativedelta(weeks=52)
 
-        while current_date > last_year:
-          month = self.getPricesByMonth(prices, current_date)
-          monthly_last_year.append(month)
-          current_date = current_date - relativedelta(weeks=4)
+        try:
+          while current_date > last_year:
+            month = ReportDatabase.getPricesByMonth(prices, current_date)
+            monthly_last_year.append(month)
+            current_date = current_date - relativedelta(weeks=4)
 
-        while current_date > two_year:
-          month = self.getPricesByMonth(prices, current_date)
-          monthly_two_year.append(month)
-          current_date = current_date - relativedelta(weeks=4)
+          while current_date > two_year:
+            month = ReportDatabase.getPricesByMonth(prices, current_date)
+            monthly_two_year.append(month)
+            current_date = current_date - relativedelta(weeks=4)
+        except Exception as e:
+          raise e
+          print("THIS IS THE BAD PART")
+          raise Exception("There is a problem here")
+
+        if len(monthly_last_year) < 10 or len(monthly_two_year) < 10:
+          return None
 
         current_momentum = Momentum.momentumOneYear(monthly_last_year)
         prev_momentum = Momentum.momentumOneYear(monthly_two_year)
@@ -193,8 +220,8 @@ class ReportDatabase:
           now,
           price['open'],
           price['close'],
-          atr,
-          percent_atr,
+          0,
+          0,
           current_momentum,
           prev_momentum,
           acceleration,

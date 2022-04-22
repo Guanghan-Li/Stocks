@@ -13,7 +13,13 @@ class PricesDatabase:
       'engine': 'peewee.SqliteDatabase'
     }
     self.proxy: DatabaseProxy = proxy
-    self.database = SqliteDatabase(db_path)
+    self.database = PostgresqlDatabase(
+      "prices",
+      user="postgres",
+      password="stock",
+      host="localhost",
+      port=5433
+    )
     self.proxy.initialize(self.database)
     self.proxy.connect()
 
@@ -44,26 +50,27 @@ class PricesDatabase:
       "low": prices['low'][date]
     }
 
-  def loadPrices(self, prices, table):
+  def loadPrices(self, prices, table, asset=None):
     dates = [str(date) for date in prices['open'].keys()]
     data = [self.dfToDict(date, prices) for date in dates]
-    with self.proxy.atomic():
-      for day in data:
-        table.create(**day)
+    table.insert_many(data).on_conflict_ignore().execute()
+    print("DONE LOADING")
 
     # for date in dates:
     #   with self.proxy.atomic():
     #     table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
 
-  async def setupPrices(self, asset, whole_data):
-      if isinstance(whole_data, DataFrame) and len(whole_data['open']) > 980:
-        #print("Loading prices for ", asset)
+  def setupPrices(self, asset, whole_data: DataFrame):
+      data_points = len(whole_data["open"])
+      if isinstance(whole_data, DataFrame) and data_points > 980:
+        print("Loading prices for ", asset)
         tables = self.proxy.get_tables()
+        asset = asset.replace(".", "_")
         table = newPrices(asset)
         if table not in tables:
           self.proxy.create_tables([table])
         print(len(tables))
-        self.loadPrices(whole_data, table)
+        self.loadPrices(whole_data, table, asset)
       elif len(whole_data['open']) < 980:
        #print(f"{asset} not enough data")
        pass

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "stock"
+version = "0.1.0"
+description = ""
+authors = [""]
+license = "WTFPL"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+alpaca = "*"
+peewee = ">=3.14"
+python-dotenv = "~=0.17"
+autobahn = {version = ">=21.3.1", extras = ["encryption", "serialization"]}
+invoke = "~=1.5"
+sty = "==1.0.0rc1"
+schema = "~=0.7.4"
+pymonad = "~=2.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
