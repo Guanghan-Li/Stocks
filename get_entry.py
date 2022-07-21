@@ -1,4 +1,7 @@
 import asyncio, threading
+import txaio
+txaio.use_asyncio()
+
 from timeit import *
 import os, math, subprocess, time
 import mplfinance as mpf

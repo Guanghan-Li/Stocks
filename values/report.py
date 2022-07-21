@@ -3,7 +3,7 @@ from Calculate.momentum import Momentum
 class Report:
   def __init__(self, date, entries, number_of_positions):
     self.date = date
-    self.entries = entries[:number_of_positions]
+    self.entries: list[Entry] = entries[:number_of_positions]
     self.stocks = [entry.stock for entry in self.entries]
   
   def get(self, stock):

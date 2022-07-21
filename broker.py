@@ -37,10 +37,10 @@ class Broker:
     start_date = start_date.strftime("%Y-%m-%d")
     end_date = end_date.strftime("%Y-%m-%d")
     message = {}
-    print(f"{thread_name} getting prices for {asset}")
+    #print(f"{thread_name} getting prices for {asset}")
     whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw')
     whole_data = whole_data.df
-    print(f"{thread_name} Got asset", asset)
+    #print(f"{thread_name} Got asset", asset)
     message = {
       "asset": asset,
       "data": whole_data,

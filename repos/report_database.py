@@ -115,7 +115,7 @@ class ReportDatabase:
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
       return Report(date, entries, number_of_results)
 
-    def getReports(self, date, strategy: Strategy):
+    def getReports(self, date, strategy: Strategy, stocks_to_exclude: list[str]):
       number_of_results = 10
       table_name = date.strftime("%Y-%m-%d")
       table = newReport(table_name)
@@ -125,7 +125,7 @@ class ReportDatabase:
 
       #query = table.select().where(table.rsi14 < 50, table.rsi28 < 50, table.rsi28 - table.rsi14 < 4, table.one_year_momentum > 2.3, table.one_year_momentum< 4)
       filters = [Filter.getFunc(table, filter) for filter in strategy.filters]
-      query = table.select().where(*filters)
+      query = table.select().where(table.stock.not_in(stocks_to_exclude), *filters)
       query = query.order_by(ordering).limit(strategy.cutoff.value)
       query = query.order_by(secondary_ordering).limit(strategy.portfolio_size.value)
       results = list(query)
@@ -169,7 +169,11 @@ class ReportDatabase:
     def getPricesByMonth(prices, current_date):
       result = []
       for price in prices:
-        price_date = datetime.fromisoformat(price['date'])
+        if isinstance(price["date"], str):
+          price_date = datetime.fromisoformat(price['date'])
+        else:
+          price_date = price["date"]
+
         if price_date.year == current_date.year and price_date.month == current_date.month:
           result.append(price)
       
@@ -189,26 +193,35 @@ class ReportDatabase:
         last_year = current_date - relativedelta(weeks=52)
         two_year = last_year - relativedelta(weeks=52)
 
-        try:
-          while current_date > last_year:
-            month = ReportDatabase.getPricesByMonth(prices, current_date)
-            monthly_last_year.append(month)
-            current_date = current_date - relativedelta(weeks=4)
+        while current_date > last_year:
+          month = ReportDatabase.getPricesByMonth(prices, current_date)
+          monthly_last_year.append(month)
+          current_date = current_date - relativedelta(weeks=4)
 
-          while current_date > two_year:
-            month = ReportDatabase.getPricesByMonth(prices, current_date)
-            monthly_two_year.append(month)
-            current_date = current_date - relativedelta(weeks=4)
-        except Exception as e:
-          raise e
-          print("THIS IS THE BAD PART")
-          raise Exception("There is a problem here")
+        while current_date > two_year:
+          month = ReportDatabase.getPricesByMonth(prices, current_date)
+          monthly_two_year.append(month)
+          current_date = current_date - relativedelta(weeks=4)
 
-        if len(monthly_last_year) < 10 or len(monthly_two_year) < 10:
+        print("Entry Gen", len(monthly_last_year), len(monthly_two_year))
+
+        # while len(monthly_last_year) > 0 and [] in monthly_last_year:
+        #   monthly_last_year.remove([])
+
+        # while len(monthly_two_year) > 0 and [] in monthly_two_year:
+        #   monthly_two_year.remove([])
+
+        # if [] in monthly_last_year or [] in monthly_two_year:
+        #   print("Returning None", monthly_last_year, monthly_two_year)
+        #   return None
+
+        if monthly_last_year == [] or monthly_two_year == []:
           return None
+
 
         current_momentum = Momentum.momentumOneYear(monthly_last_year)
         prev_momentum = Momentum.momentumOneYear(monthly_two_year)
+
 
         rsi14 = Momentum.calculateRsis(prices, 14)[-1]
         rsi28= Momentum.calculateRsis(prices, 28)[-1]

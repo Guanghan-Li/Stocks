@@ -1,3 +1,4 @@
+from weakref import proxy
 from repos.price_model import *
 from peewee import *
 from pandas import DataFrame
@@ -7,12 +8,12 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from time import sleep, strftime
 class PricesDatabase:
-  def __init__(self, proxy, db_path):
+  def __init__(self, proxyA=None, db_path=None):
     info = {
       'name': db_path,
       'engine': 'peewee.SqliteDatabase'
     }
-    self.proxy: DatabaseProxy = proxy
+    self.proxy: DatabaseProxy = price_proxy
     self.database = PostgresqlDatabase(
       "prices",
       user="postgres",
@@ -51,8 +52,7 @@ class PricesDatabase:
     }
 
   def loadPrices(self, prices, table, asset=None):
-    dates = [str(date) for date in prices['open'].keys()]
-    data = [self.dfToDict(date, prices) for date in dates]
+    data = prices
     table.insert_many(data).on_conflict_ignore().execute()
     print("DONE LOADING")
 

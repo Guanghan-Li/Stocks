@@ -45,14 +45,20 @@ class Filter(Enum):
   RSI14_MAX = ("rsi14", "max", 45)
   RSI28_MIN = ("rsi28", "min", 25)
   RSI28_MAX = ("rsi28", "max", 50)
+  TREND_UP = ("trend", "UP")
+  TREND_DOWN = ("trend", "DOWN")
+  COLUMN_UP = ("column", "UP")
+  COLUMN_DOWN = ("column", "DOWN")
 
   @staticmethod
   def getFunc(table, filter):
     values = filter.value
-    if values[1] == "min":
-      return table.__getattribute__(table, values[0]).field > values[2]
-    if values[1] == "max":
-      return table.__getattribute__(table, values[0]).field < values[2]
+    if len(values) == 2:
+      return table.__getattribute__(table, values[0]).field == values[1]
+    elif values[1] == "min":
+      return table.__getattribute__(table, values[0]).field >= values[2]
+    elif values[1] == "max":
+      return table.__getattribute__(table, values[0]).field <= values[2]
 
 class Cutoff(Enum):
   TEN = 10
@@ -92,11 +98,13 @@ class Strategy:
     self.portfolio_size = portfolio_size
 
   def __str__(self):
-    filters = f"Filters: {self.filters[0].name}"
+    filter_names = ', '.join([filter.name for filter in self.filters])
+    filters = f"Filters: [{filter_names}]"
     initial_sort = f"Initial Sort: {self.initial_sort.name}"
     cutoff = f"Cutoff: {self.cutoff.name}"
     secondary_sort = f"Secondary Sort: {self.secondary_sort}"
     portfolio_size = f"Portfolio Size: {self.portfolio_size.name}"
+
     return "Strategy -> " + " | ".join([filters, initial_sort, cutoff, secondary_sort, portfolio_size])
 
     
