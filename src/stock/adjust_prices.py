@@ -1,4 +1,4 @@
-from repos.announcement_database import AnnouncementDatabase, Announcement
+from src.stock.repos.announcement_database import AnnouncementDatabase, Announcement
 from datetime import datetime
 from functools import partial
 

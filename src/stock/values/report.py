@@ -1,4 +1,4 @@
-from Calculate.momentum import Momentum
+from src.stock.calculate.momentum import Momentum
 
 class Report:
   def __init__(self, date, entries, number_of_positions):

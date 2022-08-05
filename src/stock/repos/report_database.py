@@ -1,17 +1,17 @@
 from peewee import *
-from repos.report_model import *
+from src.stock.repos.report_model import *
 from pandas import DataFrame
 from alpaca_trade_api.rest import *
 from alpaca_trade_api.rest import REST
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from Calculate.calculations import Calculations
-from Calculate.momentum import Momentum
-from values.report import Entry, Report
+from src.stock.calculate.calculations import Calculations
+from src.stock.calculate.momentum import Momentum
+from src.stock.values.report import Entry, Report
 from time import sleep, strftime
 from peewee import FieldAccessor
 
-from values.strategy import *
+from src.stock.values.strategy import *
 
 class ReportDatabase:
     def __init__(self, proxy, price_repo, name="Data/reports.db"):

@@ -6,14 +6,15 @@ class GenerateReportActor(ActorTypeDispatcher):
   def __init__(self, name, save_report_actor):
     super().__init__()
     self.name = name
-    Helpers.use_deamon_thread = True
-    self.helpers = Helpers.start().proxy()
+    # Helpers.use_deamon_thread = True
+    # self.helpers = Helpers.start().proxy()
     self.save_report_actor: ReportSaveActor = save_report_actor
-    PNFActor.use_deamon_thread = True
-    self.pnf_actor = PNFActor.start("PNF Actor").proxy()
+    # PNFActor.use_deamon_thread = True
+    # self.pnf_actor = PNFActor.start("PNF Actor").proxy()
   
   def receiveMsg_SetupMessage(self, message, sender):
-    pass
+    self.save_report_actor = message.info["save_report_actor"]
+
 
   def receiveMsg_GenerateReport(self, message, sender):
     pass

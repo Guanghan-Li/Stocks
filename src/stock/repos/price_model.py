@@ -5,10 +5,10 @@ price_proxy = DatabaseProxy()
 def newPrices(name):
   class Prices(Model):
     date = DateTimeField(unique=True)
-    open = FloatField()
-    high = FloatField()
-    low = FloatField()
-    close = FloatField()
+    open = FloatField(null=True)
+    high = FloatField(null=True)
+    low = FloatField(null=True)
+    close = FloatField(null=True)
 
     class Meta:
       database = price_proxy

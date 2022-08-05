@@ -3,18 +3,17 @@ from time import sleep
 import os, math, subprocess, time
 import mplfinance as mpf
 from alpaca_trade_api.rest import *
-from repos.report_model import *
-from repos.price_database import *
 from peewee import *
 from pandas import DataFrame
-from Calculate.calculations import Calculations
-from values.report import Entry
-from repos.price_database import PricesDatabase
-from Calculate.momentum import Momentum
-from values.order import Order
+from src.stock.calculate.calculations import Calculations
+from src.stock.values.report import Entry
+from src.stock.repos.price_database import PricesDatabase
+from src.stock.calculate.momentum import Momentum
+from src.stock.values.order import Order
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from repos.report_database import ReportDatabase
+from src.stock.repos.report_database import ReportDatabase
+from src.stock.values.prices import Prices, Price
 
 class Broker:
   def __init__(self, account_info):
@@ -36,17 +35,11 @@ class Broker:
   def getPriceData(self, asset, start_date: datetime, end_date: datetime, thread_name=""):
     start_date = start_date.strftime("%Y-%m-%d")
     end_date = end_date.strftime("%Y-%m-%d")
-    message = {}
-    #print(f"{thread_name} getting prices for {asset}")
+
     whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw')
-    whole_data = whole_data.df
-    #print(f"{thread_name} Got asset", asset)
-    message = {
-      "asset": asset,
-      "data": whole_data,
-      "date": end_date
-    }
-    return message
+    prices = Prices.fromDataFrame(asset, whole_data.df)
+
+    return prices
 
   def getLongStocks(self, report, amount):
     report.sort(key=lambda entry: entry.acceleration, reverse = True)

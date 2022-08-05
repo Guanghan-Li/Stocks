@@ -1,30 +1,29 @@
 import thespian
 from thespian.actors import *
 from sty import fg
+from src.stock.repos.price_database import PricesDatabase, price_proxy
+from src.stock.actors.messages import *
 
 class SavePriceActor(ActorTypeDispatcher):
-  def __init__(self, name):
+  def __init__(self):
     super().__init__()
-    print(f"{fg.li_cyan}STARTING{fg.rs} {name}")
-    self.name = name
+    self.running_task = False
+
+  def receiveMsg_SetupMessage(self, message: SetupMessage, sender):
+    self.name = message.info["name"]
+    print("Got Setup message", self.name)
     self.prices_database = PricesDatabase(price_proxy, "Data/prices.db")
+    self.send(sender, 0)
 
-  def receiveMsg_SetupMessage(self, message, sender):
-    pass
-
-  def receiveMsg_SavePriceMessage(self, message, sender):
-    pass
-
-  def savePrice(self, message):
+  def receiveMsg_SavePriceMessage(self, message: SavePriceMessage, sender):
     print(f"{fg.li_red}START savePrice{fg.rs} {self.name}")
-    asset = message["asset"]
-    data = message["data"]
+    print(message.data)
+    self.prices_database.setupPrices(message.asset, message.data)
 
-    if len(data) < 980:
-      return None
 
-    self.prices_database.setupPrices(asset, data)
     print(f"{fg.li_red}END savePrice{fg.rs} {self.name}")
+    self.send(message.sender, 0)
+    
   
-  def on_stop(self):
-    self.prices_database.database.close()
+  def receiveMsg_TaskFinishedMessage(self, message: TaskFinishedMessage, sender):
+    self.send(sender, self.running_task)

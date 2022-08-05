@@ -1,11 +1,11 @@
 from re import A
-from repos.announcement_model import *
+from src.stock.repos.announcement_model import *
 from peewee import *
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from time import strftime
-from lib.broker_api.announcement import Announcement
+from src.stock.lib.broker_api.announcement import Announcement
 
 class AnnouncementDatabase:
   def __init__(self):

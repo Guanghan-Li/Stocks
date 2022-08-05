@@ -1,5 +1,5 @@
 from weakref import proxy
-from repos.price_model import *
+from src.stock.repos.price_model import *
 from peewee import *
 from pandas import DataFrame
 from alpaca_trade_api.rest import *
@@ -53,26 +53,22 @@ class PricesDatabase:
 
   def loadPrices(self, prices, table, asset=None):
     data = prices
-    table.insert_many(data).on_conflict_ignore().execute()
+    with self.database.atomic():
+      table.insert_many(data).on_conflict_ignore().execute()
     print("DONE LOADING")
-
-    # for date in dates:
-    #   with self.proxy.atomic():
-    #     table.create(date=date, open=prices['open'][date], close=prices['close'][date], high=prices['high'][date], low=prices['low'][date])
 
   def setupPrices(self, asset, whole_data: DataFrame):
       data_points = len(whole_data["open"])
-      if isinstance(whole_data, DataFrame) and data_points > 980:
+      if isinstance(whole_data, DataFrame) and data_points > 0:
         print("Loading prices for ", asset)
         tables = self.proxy.get_tables()
         asset = asset.replace(".", "_")
         table = newPrices(asset)
         if table not in tables:
           self.proxy.create_tables([table])
-        print(len(tables))
         self.loadPrices(whole_data, table, asset)
       elif len(whole_data['open']) < 980:
-       #print(f"{asset} not enough data")
+       print(f"{asset} not enough data")
        pass
   
   def getPriceByDay(self, stock, date: datetime):
