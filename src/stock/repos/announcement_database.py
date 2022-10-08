@@ -69,11 +69,11 @@ class AnnouncementDatabase:
 
     return self.dbToAnnouncement(db_announcement)
 
-  def listAnnouncements(self, target_symbol=None):
-    if target_symbol == None:
+  def listAnnouncements(self, symbol=None):
+    if symbol == None:
       dbs = list(AnnouncementModel.select())
     else:
-      dbs = list(AnnouncementModel.select().where(AnnouncementModel.target_symbol == target_symbol))
+      dbs = list(AnnouncementModel.select().where((AnnouncementModel.target_symbol == symbol) | (AnnouncementModel.initiating_symbol == symbol)))
 
     return [self.dbToAnnouncement(a) for a in dbs]
 

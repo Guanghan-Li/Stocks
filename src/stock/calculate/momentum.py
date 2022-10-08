@@ -1,4 +1,5 @@
 from asyncio import set_event_loop
+from src.stock.values.prices import Prices, Price
 
 
 class Momentum:
@@ -12,16 +13,16 @@ class Momentum:
     return Momentum.netReturn(start_price, end_price) + 1
   
   @staticmethod
-  def momentumOneMonth(month_data):
-    start = month_data[0]['open']
-    end = month_data[-1]['close']
+  def momentumOneMonth(month_prices: Prices):
+    start = month_prices.prices[0].open
+    end = month_prices.prices[-1].close
     return Momentum.grossReturn(start, end)
   
   @staticmethod
-  def momentumOneYear(year_data):
+  def momentumOneYear(year_prices: Prices):
     gross_returns = []
 
-    for month in year_data:
+    for month in year_prices.splitByMonth():
       one_month_momentum = Momentum.momentumOneMonth(month)
       gross_returns.append(one_month_momentum)
     
@@ -31,17 +32,17 @@ class Momentum:
 #https://school.stockcharts.com/doku.php?id=technical_indicators:relative_strength_index_rsi
 
   @staticmethod
-  def calculateRsis(prices, period):
+  def calculateRsis(prices: Prices, period):
     rsis = []
     initial_avg_gain = Momentum.initialAverageGain(prices, period)
     initial_avg_loss = Momentum.initialAverageLoss(prices, period)
-    prices = prices[period:]
+    prices = prices.get(period)
     for i in range(1, len(prices)):
       rs = Momentum.rs(initial_avg_gain, initial_avg_loss)
       rsi = Momentum.rsi(rs)
       rsis.append(rsi)
-      first_price = prices[i-1]["close"]
-      second_price = prices[i]["close"]
+      first_price = prices.prices[i-1].close
+      second_price = prices.prices[i].close
       gain = Momentum.gain(first_price, second_price)
       loss = Momentum.loss(first_price, second_price)
       initial_avg_gain = Momentum.averageGain(initial_avg_gain, gain, period)
@@ -70,24 +71,24 @@ class Momentum:
     return 100 - 100/(1+rs)
 
   @staticmethod
-  def initialAverageGain(prices, period):
+  def initialAverageGain(prices: Prices, period):
     gains = []
     lookback = len(prices) - period - 1
-    for i in range(1, len(prices[lookback:])):
-      first_price = prices[i-1]["close"]
-      second_price = prices[i]["close"]
+    for i in range(1, len(prices.get(lookback).prices)):
+      first_price = prices.prices[i-1].close
+      second_price = prices.prices[i].close
       gain = Momentum.gain(first_price, second_price)
       gains.append(gain)
     
     return sum(gains) / period
 
   @staticmethod
-  def initialAverageLoss(prices, period):
+  def initialAverageLoss(prices: Prices, period):
     losses = []
     lookback = len(prices) - period - 1
-    for i in range(1, len(prices[:period])):
-      first_price = prices[i-1]["close"]
-      second_price = prices[i]["close"]
+    for i in range(1, len(prices.get(0, period))):
+      first_price = prices.prices[i-1].close
+      second_price = prices.prices[i].close
       loss = Momentum.loss(first_price, second_price)
       losses.append(loss)
     

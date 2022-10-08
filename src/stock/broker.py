@@ -14,14 +14,16 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from src.stock.repos.report_database import ReportDatabase
 from src.stock.values.prices import Prices, Price
+from src.stock.lib.log.log import Log
 
 class Broker:
-  def __init__(self, account_info):
+  def __init__(self, account_info, log=False):
     self.api = REST(
       account_info['public_key'],
       account_info['private_key'],
       account_info['api_link']
     )
+    self.log = Log(can_log=log)
 
   def getAllAssets(self):
     active_assets = self.api.list_assets(status='active')
@@ -33,6 +35,7 @@ class Broker:
   now = datetime.now()
 
   def getPriceData(self, asset, start_date: datetime, end_date: datetime, thread_name=""):
+    self.log.info("Getting Price data for", asset)
     start_date = start_date.strftime("%Y-%m-%d")
     end_date = end_date.strftime("%Y-%m-%d")
 
@@ -64,13 +67,12 @@ class Broker:
     stocks_to_order = []
     buying_power = buying_power // 3
 
-    print()
 
     for stock in stocks:
       percentage = round((round(stock.current_momentum,3) * 1000) / sum_momentum, 4)
       funds = buying_power * percentage
       amount = int(funds // stock.price)
-      print(stock.stock, amount, amount * stock.price)
+      self.log.info(stock.stock, amount, amount * stock.price)
 
       if stock in long_stocks:
         order = Order(stock.stock, amount, 'buy')
@@ -89,7 +91,7 @@ class Broker:
         type='market',
         time_in_force='gtc'
     )
-    print("Purchased:", entry.stock)
+    self.log.info("Purchased:", entry.stock)
 
   def sell(self, order, entry):
     self.api.submit_order(
@@ -99,7 +101,7 @@ class Broker:
         type='market',
         time_in_force='gtc'
     )
-    print("Sold:", entry.stock)
+    self.log.info("Sold:", entry.stock)
 
   def executeOrders(self, orders, entry):
     for order in orders:

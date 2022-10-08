@@ -3,7 +3,7 @@ from peewee import *
 price_proxy = DatabaseProxy()
 
 def newPrices(name):
-  class Prices(Model):
+  class PricesModel(Model):
     date = DateTimeField(unique=True)
     open = FloatField(null=True)
     high = FloatField(null=True)
@@ -14,9 +14,9 @@ def newPrices(name):
       database = price_proxy
       table_name = name
   
-  return Prices
+  return PricesModel
 
-class Prices(Model):
+class PricesModel(Model):
   date = DateTimeField(unique=True)
   open = FloatField()
   high = FloatField()

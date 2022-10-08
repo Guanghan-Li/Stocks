@@ -12,9 +12,12 @@ from time import sleep, strftime
 from peewee import FieldAccessor
 
 from src.stock.values.strategy import *
+from src.stock.values.prices import Prices, Price
+
+from src.stock.lib.log.log import Log
 
 class ReportDatabase:
-    def __init__(self, proxy, price_repo, name="Data/reports.db"):
+    def __init__(self, log=False):
         self.proxy = report_proxy
         #self.proxy.initialize(SqliteDatabase(name))
         self.database = PostgresqlDatabase(
@@ -24,14 +27,20 @@ class ReportDatabase:
           host="localhost",
           port=5433
         )
+        self.log = Log(can_log=log)
         self.proxy.initialize(self.database)
         self.proxy.connect()
-        self.price_repo = price_repo
-    
+        #self.price_repo = price_repo
+
+    def deleteAll(self):
+      tables = [newReport(t) for t in self.database.get_tables()]
+      self.log.info("Reports Amount Before:", len(tables))
+      self.database.drop_tables(tables)
+      self.log.info("Reports Amount After:", len(self.database.get_tables()))
 
     def setupReports(self, all_assets, start_date='2019-11-20', end_date='2022-02-17'):
       for asset in all_assets:
-        print("Loading reports for ", asset)
+        self.log.info("Loading reports for ", asset)
 
         # tables = self.proxy.get_tables()
         # table = newReport(asset)
@@ -46,29 +55,23 @@ class ReportDatabase:
           self.saveReport(date)
 
     def saveEntry(self, entry):
-
-      date = entry.date.strftime("%Y-%m-%d")
-      table = newReport(date)
+      table = newReport(entry.stock)
       tables = self.proxy.get_tables()
       if table not in tables:
         self.proxy.create_tables([table])
-
-      table.create(
-        date = entry.date.strftime("%Y-%m-%d"),
-        stock = entry.stock,
-        open_price = entry.open_price,
-        close_price = entry.close_price,
-        atr = entry.atr,
-        percent_atr = entry.percent_atr,
-        two_year_momentum = entry.prev_momentum,
-        one_year_momentum = entry.current_momentum,
-        acceleration = entry.acceleration,
-        rsi14 = entry.rsi14,
-        rsi28 = entry.rsi28,
-        column = entry.column,
-        trend = entry.trend
-      )
-      print(f"Saved {entry.stock} on {entry.date.strftime('%Y-%m-%d')}")
+      with self.database.atomic():
+        table.create(**entry.toDict())
+        self.log.info(f"Saved {entry.stock} on {entry.dateString()}")
+    
+    def saveEntries(self, entries):
+      data = [entry.toDict() for entry in entries]
+      table = newReport(entries[0].stock)
+      tables = self.proxy.get_tables()
+      if table not in tables:
+        self.proxy.create_tables([table])
+      
+      with self.database.atomic():
+        table.insert_many(data).execute()
 
     def saveReport(self, date):
       all_stocks = self.price_repo.getAllStocks()
@@ -92,7 +95,7 @@ class ReportDatabase:
       table_name = f"{date.year}-{date.month}-{date.day}"
       table = newReport(table_name)
       report = table.get(table.stock == stock)
-      print(report.stock, report.column, report.trend)
+      self.log.info(report.stock, report.column, report.trend)
       if report.column == 'UP' and report.trend == 'UP':
         return True
       else:
@@ -148,7 +151,7 @@ class ReportDatabase:
         report = []
 
         for stock in all_stocks:
-            #print('Getting ATR for ' + stock)
+            #self.log.info('Getting ATR for ' + stock)
             prices = self.price_repo.getPricesFromDB(stock, date)
             entry = self.generateEntry(stock, prices, date)
             report.append(entry)
@@ -162,7 +165,7 @@ class ReportDatabase:
       table_name = date.strftime("%Y-%m-%d")
       table = newReport(table_name)
       entry = list(table.select().where(table.stock == stock))[0]
-      print(entry.stock)
+      self.log.info(entry.stock)
       return Entry.fromDB(entry)
 
     @staticmethod
@@ -180,59 +183,25 @@ class ReportDatabase:
       return result
 
     @staticmethod
-    def generateEntry(stock, prices, current_date):
-        print("generateEntry", stock, current_date)
-        current_year = current_date.year
-        now = current_date
-        # atr = round(Calculations.averageTrueRange(prices, len(prices)), 2)
-        # close_price = prices[-1]['close']
-        # percent_atr = (atr / close_price) * 100
+    def generateEntry(prices: Prices):
+        years = prices.getLastYears(2).splitByYear()
+        last_year_prices = years[0]
+        two_year_prices = years[1]
 
-        monthly_last_year = []
-        monthly_two_year = []
-        last_year = current_date - relativedelta(weeks=52)
-        two_year = last_year - relativedelta(weeks=52)
-
-        while current_date > last_year:
-          month = ReportDatabase.getPricesByMonth(prices, current_date)
-          monthly_last_year.append(month)
-          current_date = current_date - relativedelta(weeks=4)
-
-        while current_date > two_year:
-          month = ReportDatabase.getPricesByMonth(prices, current_date)
-          monthly_two_year.append(month)
-          current_date = current_date - relativedelta(weeks=4)
-
-        print("Entry Gen", len(monthly_last_year), len(monthly_two_year))
-
-        # while len(monthly_last_year) > 0 and [] in monthly_last_year:
-        #   monthly_last_year.remove([])
-
-        # while len(monthly_two_year) > 0 and [] in monthly_two_year:
-        #   monthly_two_year.remove([])
-
-        # if [] in monthly_last_year or [] in monthly_two_year:
-        #   print("Returning None", monthly_last_year, monthly_two_year)
-        #   return None
-
-        if monthly_last_year == [] or monthly_two_year == []:
-          return None
-
-
-        current_momentum = Momentum.momentumOneYear(monthly_last_year)
-        prev_momentum = Momentum.momentumOneYear(monthly_two_year)
-
+        current_momentum = Momentum.momentumOneYear(last_year_prices)
+        prev_momentum = Momentum.momentumOneYear(two_year_prices)
 
         rsi14 = Momentum.calculateRsis(prices, 14)[-1]
         rsi28= Momentum.calculateRsis(prices, 28)[-1]
-        #acceleration = current_momentum - prev_momentum
+
         acceleration = prev_momentum - current_momentum
-        price = prices[-1]
+        price = prices.prices[-1]
+
         entry = Entry(
-          stock,
-          now,
-          price['open'],
-          price['close'],
+          prices.symbol,
+          prices.end_date,
+          price.open,
+          price.close,
           0,
           0,
           current_momentum,

@@ -2,7 +2,7 @@
 name = "stock"
 version = "0.1.0"
 description = ""
-authors = [""]
+authors = ["Joel Moore", "Guanghan Li"]
 license = "WTFPL"
 
 [tool.poetry.dependencies]
@@ -20,6 +20,7 @@ thespian = "*"
 janus = "*"
 mplfinance = "*"
 psycopg2-binary = "^2.9.3"
+python-dateutil = "^2.8.2"
 
 
 [build-system]
