@@ -31,7 +31,6 @@ class GenerateReportActor(ActorTypeDispatcher):
 
   def receiveMsg_GenerateReportMessage(self, message: GenerateReportMessage, sender):
     self.all_assets = []
-    self.log.info(self.name, "Got message")
     asset = message.asset
     prices:  Prices = message.data
     end_date = prices.end_date
@@ -43,36 +42,44 @@ class GenerateReportActor(ActorTypeDispatcher):
 
     task = Task.create(self.name, prices.symbol)
     self.send(self.task_manager, task.toCreateMessage())
-
+    self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset}")
+    start = datetime.now()
     while weeks > 0 and entry != None:
       new_task = Task.create(self.name, None)
-      self.send(self.task_manager, new_task.toCreateMessage())
+      #self.send(self.task_manager, new_task.toCreateMessage())
       weeks -= 1
 
       now -= relativedelta(days=7)
       now = datetime(now.year, now.month, now.day)
+      #self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset} {now.strftime('%Y-%m-%d')}")
       prices = prices.getBefore(now)
+
       if len(prices) > 0:
-        ann = self.announce_db.listAnnouncements(symbol=prices.symbol)
-        for a in ann:
-          ex_date = datetime(a.ex_date.year, a.ex_date.month, a.ex_date.day)
-          if ex_date < now:
-            prices = prices.adjust(a)
+        # ann = self.announce_db.listAnnouncements(symbol=prices.symbol)
+        # for a in ann:
+        #   ex_date = datetime(a.ex_date.year, a.ex_date.month, a.ex_date.day)
+        #   if ex_date < now:
+        #     prices = prices.adjust(a)
         entry = ReportDatabase.generateEntry(prices)
 
         if entry != None:
-          self.log.info(entry)
           # foo = await self.pnf_actor.updateReport(asset, prices)
           # entry.trend = foo[0]
           # entry.column = foo[1]
           entries.append(entry)
-          self.send(self.task_manager, new_task.toFinishedMessage())
+          #self.send(self.task_manager, new_task.toFinishedMessage())
           #self.send(self.save_report_actor, SaveReportMessage(entry, message.sender))
         else:
-          self.send(self.task_manager, new_task.toFinishedMessage())
+          pass
+          #self.send(self.task_manager, new_task.toFinishedMessage())
       else:
-        self.send(self.task_manager, new_task.toFinishedMessage())
+        pass
+        #self.send(self.task_manager, new_task.toFinishedMessage())
       
+      #self.log.info(f"{fg.yellow}DONE generateReport{fg.rs} {self.name} | {asset} | {now.strftime('%Y-%m-%d')} | took: {time_spent}")
+    
+    end = datetime.now()
+    time_spent = (end-start).microseconds*0.001
+    self.log.info(f"{fg.yellow}DONE generateReport{fg.rs} {self.name} | {asset} | took: {time_spent}")
     self.send(self.save_report_actor, SaveReportMessage(entries, message.sender))
-    self.send(self.task_manager, task.toFinishedMessage())
-    self.log.info("DONE with", asset)
+    #self.send(self.task_manager, task.toFinishedMessage())

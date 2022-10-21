@@ -34,34 +34,65 @@ from src.stock.actors.messages import *
 from src.stock.values.tasks import Tasks, Task
 
 
-#personal
+# #personal
+# account_info1 = {
+#       "public_key": 'PKG77R4EUWQ76WC12PI5',
+#       "private_key": 'YvNim9ia5ov4oJ7WHLv6ElPYQMcMTZMMTP3pLjtp',
+#       "api_link": 'https://paper-api.alpaca.markets'
+# }
+# #08
+# account_info2 = {
+#   "public_key": "PKAJ6YB539JWBMJT81Q8",
+#   "private_key": "clxZoMjA1rc7RFA42aFcbnAwggp95buT1bwGCHxe",
+#   "api_link": "https://paper-api.alpaca.markets"
+# }
+# #02
+# account_info3 = {
+#   "public_key": "PKZBZND7F6PH39SMHJPQ",
+#   "private_key": "2gENBEvKNSEss7zWkY8N290eIANnv32iUeuHPRFy",
+#   "api_link": "https://paper-api.alpaca.markets"
+# }
+# #03
+# account_info4 = {
+#   "public_key": "PKQMDMXG2T2FMQ8AZOY5",
+#   "private_key": "YVdUWYT7hTVPxpkuwDFi07i3Ib8E1AceHPZha46a",
+#   "api_link": "https://paper-api.alpaca.markets"
+# }
+
+# account_info5 = {
+#   "public_key": "PKP33J9QMA0IK97MBED5",
+#   "private_key": "D2cP3slrGwPm3MeAdQdar2MawUNmYMwaK1Wq99lv",
+#   "api_link": "https://paper-api.alpaca.markets"
+# }
+
+#1
 account_info1 = {
-      "public_key": 'PKG77R4EUWQ76WC12PI5',
-      "private_key": 'YvNim9ia5ov4oJ7WHLv6ElPYQMcMTZMMTP3pLjtp',
+      "public_key": 'PK22ZH3C6B3Z2JB1JSDC',
+      "private_key": 'ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w',
       "api_link": 'https://paper-api.alpaca.markets'
 }
-#08
+#2
 account_info2 = {
-  "public_key": "PKAJ6YB539JWBMJT81Q8",
-  "private_key": "clxZoMjA1rc7RFA42aFcbnAwggp95buT1bwGCHxe",
+  "public_key": "PKXTOW2DFRAOYDU29XO9",
+  "private_key": "JeMTNZXWJoge0dIoRbndOelTcWqlxysbQndh3XGw",
   "api_link": "https://paper-api.alpaca.markets"
 }
-#02
+#3
 account_info3 = {
-  "public_key": "PKZBZND7F6PH39SMHJPQ",
-  "private_key": "2gENBEvKNSEss7zWkY8N290eIANnv32iUeuHPRFy",
+  "public_key": "PKMXHRH2KM0Z29935SH9",
+  "private_key": "YkO4Izloj3mxN9rSvJsCS5BJtzPvyl38IvAsgBO2",
   "api_link": "https://paper-api.alpaca.markets"
 }
-#03
+#4
 account_info4 = {
-  "public_key": "PKQMDMXG2T2FMQ8AZOY5",
-  "private_key": "YVdUWYT7hTVPxpkuwDFi07i3Ib8E1AceHPZha46a",
+  "public_key": "PKKYX28AK5ON4C2BT4F3",
+  "private_key": "EtnwXKOQYfDx2qcwaboKNSJjoNnOZNaL9gvNJKnm",
   "api_link": "https://paper-api.alpaca.markets"
 }
-
+#5
 account_info5 = {
-  "public_key": "PKP33J9QMA0IK97MBED5",
-  "private_key": "D2cP3slrGwPm3MeAdQdar2MawUNmYMwaK1Wq99lv",
+  "public_key": "PKCOPWLFO2UW71KJ6F6S",
+  "private_key": "36Au0YQnlxZF9tHiRYFOcOYey7dIgiBah01GjPcK",
   "api_link": "https://paper-api.alpaca.markets"
 }
 
@@ -73,13 +104,18 @@ account_info5 = {
 
 broker = Broker(account_info1)
 
+# start = datetime.now()
+# prices = broker.getPriceData("DIG", datetime(2018, 8, 9), datetime(2022, 8, 24))
+# end = datetime.now()
+# time_spent = (end-start).microseconds*0.001
+# all_time = time_spent * 7000 * 0.001
+# print("TIME:", all_time / 60 / 60)
+# print("prices", prices.amount)
+# quit()
+# years = 2
+# foo = prices.amountOfYears()
+# print(foo)
 
-# prices = broker.getPriceData("DIG", datetime(2022, 8, 9), datetime(2022, 8, 24))
-# weeks = prices.splitByWeek()
-# print(len(weeks))
-
-# for week in weeks:
-#   print(week)
 # quit()
 asys = ActorSystem("multiprocQueueBase")
 assets = broker.getAllAssets()
@@ -108,7 +144,7 @@ def main():
   broker_actors = []
   task_manager = asys.createActor(TaskManagerActor)
   asys.ask(task_manager, SetupMessage({}, log=can_log))
-  for i in range(len(amount)):
+  for i in range(2):
     asset_group = amount[i]
     broker_actor = asys.createActor(BrokerActor)
     broker_actors.append(broker_actor)
@@ -130,7 +166,7 @@ def main():
     asys.ask(gen_report_actor, SetupMessage({"name": f"Gen Report Actor {i}", "save_report_actor": save_report_actor, "task_manager": task_manager}, log=can_log))
 
 
-  for i in range(len(amount)):
+  for i in range(2):
     asset_group = amount[i]
     broker_actor = broker_actors[i]
     get_message = GetPriceMessage(asset_group, start_date, end_date)

@@ -16,6 +16,7 @@ class TaskManagerActor(ActorTypeDispatcher):
     self.send(sender, 0)
 
   def receiveMsg_TaskCreate(self, message: TaskCreate, sender):
+    return
     task: Task = message.task
     if not task.actor_name in self.all_tasks:
       self.all_tasks[task.actor_name] = Tasks([])
@@ -24,6 +25,7 @@ class TaskManagerActor(ActorTypeDispatcher):
     actor_tasks.tasks.append(task)
 
   def receiveMsg_TaskFinished(self, message: TaskFinishedMessage, sender):
+    return
     actor_tasks: Tasks = self.all_tasks[message.actor_name]
     task = actor_tasks.getById(message.task_id)
     task.done = True

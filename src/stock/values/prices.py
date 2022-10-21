@@ -86,21 +86,38 @@ class Prices:
     groups = itertools.groupby(self.prices, key=groupFunc)
     return [Prices(self.symbol, list(group[1])) for group in groups]
 
-  def splitByYear(self) -> list['Prices']:
+  def splitByYear2(self) -> list['Prices']:
     def groupFunc(price: Price):
-      return (self.end_date - price.date).days // 366
+      days = (self.end_date - price.date).days
+      return days // 366
     
     groups = itertools.groupby(self.prices, key=groupFunc)
-    return [Prices(self.symbol, list(group[1])) for group in groups]
+    prices = [Prices(self.symbol, list(group[1])) for group in groups]
+    return [price for price in prices if price.amount >= 252]
+  
+  def chunk(self, data, arr_size=252):
+    arr_range = iter(data)
+    return iter(lambda: tuple(itertools.islice(arr_range, arr_size)), ())
+
+
+  def splitByYear(self) -> list['Prices']:
+    prices = self.prices[::-1]
+    groups = self.chunk(prices)
+    return [Prices(self.symbol, list(group)[::-1]) for group in groups if len(group) >= 252][::-1]
   
   def get(self, from_index, to_index=-1):
     return Prices(self.symbol, self.prices[from_index:to_index])
   
-  def getLastYears(self, amount, from_date=None) -> 'Prices':
+  def getFromDate(self, from_date=None):
     if from_date != None:
       new_prices = [price for price in self.prices if price.date <= from_date]
     else:
       new_prices = self.prices
+
+    return new_prices
+
+  def getLastYears(self, amount, from_date=None) -> 'Prices':
+    new_prices = self.getFromDate(from_date=from_date)
 
     output = []
     prices = Prices(self.symbol, new_prices).splitByYear()
@@ -108,6 +125,11 @@ class Prices:
       output += prices[i].prices
     
     return Prices(self.symbol, output)
+
+  def canGetYears(self, amount_of_years, from_date=None):
+    new_prices = self.getFromDate(from_date=from_date)
+    prices = Prices(self.symbol, new_prices).splitByYear()
+    return len(prices) >= amount_of_years
   
   def getBefore(self, date: datetime) -> 'Prices':
     date = self.makeDateGood(date)

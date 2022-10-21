@@ -61,7 +61,7 @@ class Entry:
   def toDict(self):
     return {
       "stock": self.stock,
-      "date" : self.dateString(),
+      "date" : self.date,
       "open_price" : self.open_price,
       "close_price" : self.close_price,
       "atr" : self.atr,
@@ -73,7 +73,6 @@ class Entry:
       "rsi28": self.rsi28,
       "column" : self.column,
       "trend" : self.trend
-
     }
 
 

@@ -72,6 +72,8 @@ class ReportDatabase:
       
       with self.database.atomic():
         table.insert_many(data).execute()
+      
+      print(f"SAVED {entries[0].stock} "*10)
 
     def saveReport(self, date):
       all_stocks = self.price_repo.getAllStocks()
@@ -184,30 +186,33 @@ class ReportDatabase:
 
     @staticmethod
     def generateEntry(prices: Prices):
-        years = prices.getLastYears(2).splitByYear()
-        last_year_prices = years[0]
-        two_year_prices = years[1]
+      if not prices.canGetYears(2):
+        return None
+        
+      years = prices.getLastYears(2).splitByYear()
+      last_year_prices = years[0]
+      two_year_prices = years[1]
 
-        current_momentum = Momentum.momentumOneYear(last_year_prices)
-        prev_momentum = Momentum.momentumOneYear(two_year_prices)
+      current_momentum = Momentum.momentumOneYear(last_year_prices)
+      prev_momentum = Momentum.momentumOneYear(two_year_prices)
 
-        rsi14 = Momentum.calculateRsis(prices, 14)[-1]
-        rsi28= Momentum.calculateRsis(prices, 28)[-1]
+      rsi14 = Momentum.calculateRsis(prices, 14)[-1]
+      rsi28= Momentum.calculateRsis(prices, 28)[-1]
 
-        acceleration = prev_momentum - current_momentum
-        price = prices.prices[-1]
+      acceleration = prev_momentum - current_momentum
+      price = prices.prices[-1]
 
-        entry = Entry(
-          prices.symbol,
-          prices.end_date,
-          price.open,
-          price.close,
-          0,
-          0,
-          current_momentum,
-          prev_momentum,
-          acceleration,
-          rsi14,
-          rsi28
-        )
-        return entry
+      entry = Entry(
+        prices.symbol,
+        prices.end_date,
+        price.open,
+        price.close,
+        0,
+        0,
+        current_momentum,
+        prev_momentum,
+        acceleration,
+        rsi14,
+        rsi28
+      )
+      return entry
