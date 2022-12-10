@@ -10,17 +10,16 @@ python = "^3.9"
 alpaca_trade_api = "*"
 peewee = "*"
 python-dotenv = "*"
-autobahn = {version = "*", extras = ["encryption", "serialization"]}
 invoke = "*"
 sty = "*"
 schema = "*"
 pymonad = "*"
-pykka = "*"
 thespian = "*"
 janus = "*"
 mplfinance = "*"
 psycopg2-binary = "^2.9.3"
 python-dateutil = "^2.8.2"
+pyoink = {path="../pyoink", develop=true}
 
 
 [build-system]

@@ -30,7 +30,7 @@ class Prices:
   def fromDict(symbol, data):
     prices = []
     for p in data:
-      price = Price.fromDict(p)
+      price = Price.fromDict(symbol, p)
       prices.append(price)
     
     return Prices(symbol, prices)
@@ -55,6 +55,16 @@ class Prices:
     output = []
     for price in self.prices:
       output.append(price.toDict())
+    return output
+
+  def toDict2(self):
+    output = []
+    for price in self.prices:
+      output.append(price.toDict2())
+    return output
+  
+  def toSimpleDict(self):
+    output = [price.simpleDict() for price in self.prices]
     return output
 
   def toDataFrame(self):

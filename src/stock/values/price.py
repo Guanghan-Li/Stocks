@@ -17,6 +17,14 @@ class Price:
     date = self.date.strftime("%Y-%m-%d")
     return f"{self.symbol} -> date: {date} | o: {self.open} | c: {self.close} | h: {self.high} | l: {self.low}"
   
+  def simpleDict(self):
+    return {
+      'o': self.open,
+      'c': self.close,
+      'h': self.high,
+      'l': self.low
+    }
+
   def toDict(self):
     return {
       "date": self.date,
@@ -26,6 +34,15 @@ class Price:
       "low": self.low
     }
   
+  def toDict2(self):
+    return {
+      "date": self.date.strftime("%Y-%m-%d"),
+      "open": self.open,
+      "close": self.close,
+      "high": self.high,
+      "low": self.low
+    }
+
   def toDataFrame(self):
     price_dict = self.toDict()
     return pd.DataFrame([self.toDict()], index=[])

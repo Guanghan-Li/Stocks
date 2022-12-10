@@ -10,13 +10,10 @@ from psycopg2 import Timestamp
 from src.stock.broker import Broker
 #import signal
 from sty import fg
-import txaio, signal
+import signal
 
 from stock.actors.messages import generate_report, save_report
 
-txaio.use_asyncio()
-from autobahn.asyncio.component import Component
-from autobahn.asyncio.component import run
 import queue, requests, pytz
 from requests.auth import HTTPBasicAuth
 
@@ -98,30 +95,23 @@ account_info5 = {
 
 
 # from src.stock.repos.announcement_database import AnnouncementDatabase, Announcement
-# from src.stock.repos.report_database import ReportDatabase
+from src.stock.repos.report_database import ReportDatabase
 # announce_db = AnnouncementDatabase()
 
 
 broker = Broker(account_info1)
 
 # start = datetime.now()
-# prices = broker.getPriceData("DIG", datetime(2018, 8, 9), datetime(2022, 8, 24))
-# end = datetime.now()
-# time_spent = (end-start).microseconds*0.001
-# all_time = time_spent * 7000 * 0.001
-# print("TIME:", all_time / 60 / 60)
-# print("prices", prices.amount)
-# quit()
-# years = 2
-# foo = prices.amountOfYears()
-# print(foo)
-
-# quit()
+rd = ReportDatabase()
+prices = broker.getPriceData("DIG", datetime(2018, 8, 9), datetime(2022, 8, 24))
+entry = rd.generateEntry(prices)
+print(entry)
+quit()
 asys = ActorSystem("multiprocQueueBase")
 assets = broker.getAllAssets()
 asset_amount = len(assets)
 #assets2 = broker2.getAllAssets(),
-amount = list(zip(*[iter(assets)]*(len(assets)//5)))
+amount = list(zip(*[iter(assets)]*(len(assets)//2)))
 
 
 accounts = [account_info1, account_info2, account_info3, account_info4, account_info5]

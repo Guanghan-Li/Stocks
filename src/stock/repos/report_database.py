@@ -11,6 +11,8 @@ from src.stock.values.report import Entry, Report
 from time import sleep, strftime
 from peewee import FieldAccessor
 
+from pyoink.values.chart import Chart
+
 from src.stock.values.strategy import *
 from src.stock.values.prices import Prices, Price
 
@@ -30,13 +32,35 @@ class ReportDatabase:
         self.log = Log(can_log=log)
         self.proxy.initialize(self.database)
         self.proxy.connect()
-        #self.price_repo = price_repo
+
+    @property
+    def symbols(self) -> list[str]:
+      return self.proxy.get_tables()
 
     def deleteAll(self):
       tables = [newReport(t) for t in self.database.get_tables()]
       self.log.info("Reports Amount Before:", len(tables))
       self.database.drop_tables(tables)
       self.log.info("Reports Amount After:", len(self.database.get_tables()))
+
+    def getEntryByDate(self, symbol, date):
+      table: ReportsModel = newReport(symbol)
+      query = list(table.select().where(table.date == date))
+      return Entry.fromDB(query[0])
+
+    def getDatesForSymbol(self, symbol):
+      table: ReportsModel = newReport(symbol)
+      query = list(table.select(table.date).tuples())
+      return [q[0] for q in query]
+
+    def getEntriesByDate(self, date):
+      symbols = self.proxy.get_tables()
+      entries = []
+      for symbol in symbols:
+        entry = self.getEntryByDate(symbol, date)
+        entries.append(entry)
+      
+      return entries
 
     def setupReports(self, all_assets, start_date='2019-11-20', end_date='2022-02-17'):
       for asset in all_assets:
@@ -103,12 +127,11 @@ class ReportDatabase:
       else:
         return False
 
-    def updatePnf(self, date, stock, column, trend):
-      table_name = date.strftime("%Y-%m-%d")
-      table = newReport(table_name)
-      
-      query = table.update({'column': column, 'trend': trend}).where(table.stock == stock)
-      query.execute()
+    def updatePnf(self, date, symbol, column, trend):
+      table = newReport(symbol)
+      with self.database.atomic():
+        query = table.update({'column': column, 'trend': trend}).where(table.date == date)
+        query.execute()
 
     def getTopResults(self, date, number_of_results=20):
       table_name = date.strftime("%Y-%m-%d")
@@ -148,17 +171,6 @@ class ReportDatabase:
         weekly_reports.append([date, entry])
 
       return weekly_reports
-
-    def generateReport(self, all_stocks, date):
-        report = []
-
-        for stock in all_stocks:
-            #self.log.info('Getting ATR for ' + stock)
-            prices = self.price_repo.getPricesFromDB(stock, date)
-            entry = self.generateEntry(stock, prices, date)
-            report.append(entry)
-        
-        return report
     
     def generateRepotForStock(self, stock, date):
       pass
@@ -202,6 +214,10 @@ class ReportDatabase:
       acceleration = prev_momentum - current_momentum
       price = prices.prices[-1]
 
+      box_size = Chart.getBoxSize(price.open)
+      chart = Chart(prices.symbol, box_size, 3)
+      chart.generate(prices.toSimpleDict())
+      column_direction = ("DOWN", "UP")[chart.last_direction.value]
       entry = Entry(
         prices.symbol,
         prices.end_date,
@@ -213,6 +229,7 @@ class ReportDatabase:
         prev_momentum,
         acceleration,
         rsi14,
-        rsi28
+        rsi28,
+        column=column_direction
       )
       return entry
