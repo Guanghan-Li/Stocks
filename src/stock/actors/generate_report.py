@@ -81,5 +81,8 @@ class GenerateReportActor(ActorTypeDispatcher):
     end = datetime.now()
     time_spent = (end-start).microseconds*0.001
     self.log.info(f"{fg.yellow}DONE generateReport{fg.rs} {self.name} | {asset} | took: {time_spent}")
-    self.send(self.save_report_actor, SaveReportMessage(entries, message.sender))
+    if len(entries)>0:
+      self.send(self.save_report_actor, SaveReportMessage(entries, message.sender))
+    else:
+      self.log.info(f"No entries generated skipping {prices.symbol} {prices.pretty_date_range}")
     #self.send(self.task_manager, task.toFinishedMessage())

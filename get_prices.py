@@ -94,24 +94,28 @@ account_info5 = {
 }
 
 
-# from src.stock.repos.announcement_database import AnnouncementDatabase, Announcement
-from src.stock.repos.report_database import ReportDatabase
-# announce_db = AnnouncementDatabase()
-
+# # from src.stock.repos.announcement_database import AnnouncementDatabase, Announcement
+# from src.stock.repos.report_database import ReportDatabase
+# # announce_db = AnnouncementDatabase()
+# import json
 
 broker = Broker(account_info1)
 
-# start = datetime.now()
-rd = ReportDatabase()
-prices = broker.getPriceData("DIG", datetime(2018, 8, 9), datetime(2022, 8, 24))
-entry = rd.generateEntry(prices)
-print(entry)
-quit()
+# # start = datetime.now()
+# rd = ReportDatabase()
+# prices = broker.getPriceData("F", datetime(2018, 8, 9), datetime(2022, 8, 24))
+# data = prices.toSimpleDict()
+# with open("DIG.json", "w") as f:
+#   json.dump(data, f)
+# entry = rd.generateEntry(prices)
+# print(entry)
+# quit()
+
 asys = ActorSystem("multiprocQueueBase")
 assets = broker.getAllAssets()
 asset_amount = len(assets)
 #assets2 = broker2.getAllAssets(),
-amount = list(zip(*[iter(assets)]*(len(assets)//2)))
+amount = list(zip(*[iter(assets)]*(len(assets)//4)))
 
 
 accounts = [account_info1, account_info2, account_info3, account_info4, account_info5]
@@ -129,13 +133,16 @@ signal.signal(signal.SIGABRT, killed)
 
 def main():
   can_log = True
-  start_date = datetime(2018, 7, 25)
-  end_date = datetime(2022,7,26)
+  start_date = datetime(2019, 1, 16)
+  end_date = datetime(2023,1,18)
   broker_actors = []
-  task_manager = asys.createActor(TaskManagerActor)
-  asys.ask(task_manager, SetupMessage({}, log=can_log))
-  for i in range(2):
+  # task_manager = asys.createActor(TaskManagerActor)
+  # asys.ask(task_manager, SetupMessage({}, log=can_log))
+  for i in range(4):
     asset_group = amount[i]
+    if "AAPL" in asset_group:
+      print(asset_group.index("AAPL"), len(asset_group))
+    continue
     broker_actor = asys.createActor(BrokerActor)
     broker_actors.append(broker_actor)
     save_price_actor = asys.createActor(SavePriceActor)
@@ -156,13 +163,13 @@ def main():
     asys.ask(gen_report_actor, SetupMessage({"name": f"Gen Report Actor {i}", "save_report_actor": save_report_actor, "task_manager": task_manager}, log=can_log))
 
 
-  for i in range(2):
-    asset_group = amount[i]
-    broker_actor = broker_actors[i]
-    get_message = GetPriceMessage(asset_group, start_date, end_date)
-    asys.tell(broker_actor, get_message)
+  # for i in range(4):
+  #   asset_group = amount[i]
+  #   broker_actor = broker_actors[i]
+  #   get_message = GetPriceMessage(asset_group, start_date, end_date)
+  #   asys.tell(broker_actor, get_message)
 
-  while True: pass
+  # while True: pass
 
 if __name__ == "__main__":
   main()

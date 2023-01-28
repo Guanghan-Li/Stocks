@@ -3,6 +3,7 @@ from time import sleep
 import os, math, subprocess, time
 import mplfinance as mpf
 from alpaca_trade_api.rest import *
+import alpaca_trade_api.rest_async
 from peewee import *
 from pandas import DataFrame
 from src.stock.calculate.calculations import Calculations
@@ -23,6 +24,11 @@ class Broker:
       account_info['private_key'],
       account_info['api_link']
     )
+    self.async_api = alpaca_trade_api.rest_async.AsyncRest(
+      account_info['public_key'],
+      account_info['private_key'],
+      account_info['api_link']  
+    )
     self.log = Log(can_log=log)
 
   def getAllAssets(self):
@@ -40,6 +46,16 @@ class Broker:
     end_date = end_date.strftime("%Y-%m-%d")
 
     whole_data = self.api.get_bars(asset, TimeFrame.Day, start_date, end_date, adjustment='raw')
+    prices = Prices.fromDataFrame(asset, whole_data.df)
+
+    return prices
+  
+  async def getPrices(self, asset, start_date: datetime, end_date: datetime):
+    start_date = start_date.strftime("%Y-%m-%d")
+    end_date = end_date.strftime("%Y-%m-%d")
+
+    whole_data = await self.async_api.get_bars_async(asset, "day", start_date, end_date, adjustment='raw')
+    print(whole_data)
     prices = Prices.fromDataFrame(asset, whole_data.df)
 
     return prices

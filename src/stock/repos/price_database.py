@@ -33,7 +33,8 @@ class PricesDatabase:
   def deleteAll(self):
     tables = [newPrices(t) for t in self.database.get_tables()]
     self.log.info("Prices Amount Before:", len(tables))
-    self.database.drop_tables(tables)
+    for t in chunked(tables, 50):
+      self.database.drop_tables(t)
     self.log.info("Prices Amount After:", len(self.database.get_tables()))
 
   def getAllStocks(self):

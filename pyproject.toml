@@ -6,7 +6,7 @@ authors = ["Joel Moore", "Guanghan Li"]
 license = "WTFPL"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 alpaca_trade_api = "*"
 peewee = "*"
 python-dotenv = "*"

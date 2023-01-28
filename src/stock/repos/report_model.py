@@ -1,6 +1,7 @@
 from peewee import *
 
 report_proxy = DatabaseProxy()
+week_proxy = DatabaseProxy()
 
 def newReport(name):
   class ReportsModel(Model):

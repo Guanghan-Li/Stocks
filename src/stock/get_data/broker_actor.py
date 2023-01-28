@@ -14,8 +14,8 @@ class BrokerActor(ThreadingActor):
     self.gen_report_actor: GenerateReportActor = gen_report_actor
   
   async def getPrices(self, asset_group: list[str], broker: Broker):
-    start_date = datetime(2018, 5, 16)
-    end_date = datetime(2022, 5, 18)
+    start_date = datetime(2019, 1, 16)
+    end_date = datetime(2023, 1, 18)
     for asset in asset_group:
       #print(f"{fg.green}START getPrices{fg.rs} {self.name}")
       prices = broker.getPriceData(asset, start_date=start_date, end_date=end_date, thread_name=self.name)

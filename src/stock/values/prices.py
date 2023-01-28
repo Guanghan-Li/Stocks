@@ -21,6 +21,18 @@ class Prices:
   def __len__(self):
     return self.amount
 
+  @property
+  def pretty_start_date(self) -> str:
+    return self.start_date.strftime("%Y-%m-%d")
+  
+  @property
+  def pretty_end_date(self) -> str:
+    return self.end_date.strftime("%Y-%m-%d")
+
+  @property
+  def pretty_date_range(self) -> str:
+    return self.pretty_start_date + "-" + self.pretty_end_date
+
   def __str__(self):
     start_date = self.start_date.strftime("%Y-%m-%d")
     end_date = self.end_date.strftime("%Y-%m-%d")

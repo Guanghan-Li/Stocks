@@ -27,7 +27,10 @@ class SaveReportActor(ActorTypeDispatcher):
     task = Task.create(self.name, None)
 
     #self.send(self.task_manager,task.toCreateMessage())
-    self.report_database.saveEntries(message.entries)
+    if message.entries:
+      self.report_database.saveEntries(message.entries)
+    else:
+      self.log.info("Skipping got none")
     #self.send(self.task_manager, task.toFinishedMessage())
 
     end = datetime.now()

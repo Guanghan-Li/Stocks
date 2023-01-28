@@ -10,13 +10,14 @@ from src.stock.calculate.momentum import Momentum
 from src.stock.values.report import Entry, Report
 from time import sleep, strftime
 from peewee import FieldAccessor
-
+import traceback
 from pyoink.values.chart import Chart
 
 from src.stock.values.strategy import *
 from src.stock.values.prices import Prices, Price
 
 from src.stock.lib.log.log import Log
+import json
 
 class ReportDatabase:
     def __init__(self, log=False):
@@ -40,7 +41,8 @@ class ReportDatabase:
     def deleteAll(self):
       tables = [newReport(t) for t in self.database.get_tables()]
       self.log.info("Reports Amount Before:", len(tables))
-      self.database.drop_tables(tables)
+      for t in chunked(tables, 50):
+        self.database.drop_tables(t)
       self.log.info("Reports Amount After:", len(self.database.get_tables()))
 
     def getEntryByDate(self, symbol, date):
@@ -89,6 +91,9 @@ class ReportDatabase:
     
     def saveEntries(self, entries):
       data = [entry.toDict() for entry in entries]
+      if not entries:
+        print("GOt None")
+        return None
       table = newReport(entries[0].stock)
       tables = self.proxy.get_tables()
       if table not in tables:
@@ -98,6 +103,31 @@ class ReportDatabase:
         table.insert_many(data).execute()
       
       print(f"SAVED {entries[0].stock} "*10)
+    
+    def getMOstRecent(self, symbol) -> list[Entry]:
+      table = newReport(symbol)
+      query = table.select().paginate(1, 1)
+      cursor = self.database.execute(query)
+      db_entries = []
+      for data in cursor:
+        db_entry = ReportsModel(
+          id = data[0],
+          date = data[1],
+          stock = data[2],
+          open_price = data[3],
+          close_price = data[4],
+          atr = data[5],
+          percent_atr = data[6],
+          two_year_momentum = data[7],
+          one_year_momentum = data[8],
+          acceleration = data[9],
+          column = data[10],
+          trend = data[11],
+          rsi14 = data[12],
+          rsi28 = data[13]
+        )
+        db_entries.append(db_entry)
+      return [Entry.fromDB(db_entry) for db_entry in db_entries]
 
     def saveReport(self, date):
       all_stocks = self.price_repo.getAllStocks()
@@ -142,6 +172,17 @@ class ReportDatabase:
       entries =  [Entry.fromDB(result) for result in results]
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
       return Report(date, entries, number_of_results)
+
+    def getReportsByWeek(self, date):
+      all_stocks = self.database.get_tables()
+      db_entries = []
+
+      for stock in all_stocks:
+        table = newReport(stock)
+        db_entry = table.get_by_id(date)
+        db_entries.append(db_entry)
+      
+      return db_entries
 
     def getReports(self, date, strategy: Strategy, stocks_to_exclude: list[str]):
       number_of_results = 10
@@ -197,10 +238,34 @@ class ReportDatabase:
       return result
 
     @staticmethod
+    def getChartData(prices: Prices):
+      price = prices.prices[-1]
+      box_size = Chart.getBoxSize(price.open)
+      chart = Chart(prices.symbol, box_size, 3)
+      chart.generate(prices.toSimpleDict())
+      chart.generateTrends()
+      column_direction = ("DOWN", "UP")[chart.last_direction.value]
+      trend_direction = ("DOWN", "UP")[chart.trends[-1].direction.value]
+      return column_direction, trend_direction
+
+    @staticmethod
     def generateEntry(prices: Prices):
       if not prices.canGetYears(2):
         return None
         
+      try:
+        r = ReportDatabase.getChartData(prices)
+        column_direction , trend_direction = r
+      except Exception as e:
+        print(f"ERROR -> {prices.symbol} {prices.pretty_date_range}")
+        file_name = f"{prices.symbol}-{prices.pretty_date_range}"
+        with open(f'problem_json/{file_name}.json', 'w') as f:
+          json.dump(prices.toSimpleDict(), f)
+        with open(f"errors/{file_name}.txt", "w") as f:
+          f.write(str(e))
+          f.write(traceback.format_exc())
+        return None
+
       years = prices.getLastYears(2).splitByYear()
       last_year_prices = years[0]
       two_year_prices = years[1]
@@ -214,10 +279,6 @@ class ReportDatabase:
       acceleration = prev_momentum - current_momentum
       price = prices.prices[-1]
 
-      box_size = Chart.getBoxSize(price.open)
-      chart = Chart(prices.symbol, box_size, 3)
-      chart.generate(prices.toSimpleDict())
-      column_direction = ("DOWN", "UP")[chart.last_direction.value]
       entry = Entry(
         prices.symbol,
         prices.end_date,
@@ -230,6 +291,7 @@ class ReportDatabase:
         acceleration,
         rsi14,
         rsi28,
-        column=column_direction
+        column=column_direction,
+        trend=trend_direction
       )
       return entry

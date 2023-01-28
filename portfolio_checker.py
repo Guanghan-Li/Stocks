@@ -1,29 +1,26 @@
 import asyncio, threading
-import txaio
 
-from lib.broker_api.announcement import Announcement
-txaio.use_asyncio()
+from src.stock.lib.broker_api.announcement import Announcement
 from timeit import *
 import os, math, subprocess, time
 import mplfinance as mpf
 from alpaca_trade_api.rest import *
-from autobahn.asyncio.component import Component, run, Session
-from repos.report_model import *
-from repos.price_database import *
-from Calculate.calculations import Calculations
-from values.report import Entry, Report
-from repos.price_database import PricesDatabase
-from Calculate.momentum import Momentum
-from values.order import Order
+from src.stock.repos.report_model import *
+from src.stock.repos.price_database import *
+from src.stock.calculate.calculations import Calculations
+from src.stock.values.report import Entry, Report
+from src.stock.repos.price_database import PricesDatabase
+from src.stock.calculate.momentum import Momentum
+from src.stock.values.order import Order
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from repos.report_database import ReportDatabase
-from broker import Broker
-from values.portfolio import Portfolio
+from src.stock.repos.report_database import ReportDatabase
+from src.stock.broker import Broker
+from src.stock.values.portfolio import Portfolio
 import janus, math
-from repos.announcement_database import AnnouncementDatabase
+from src.stock.repos.announcement_database import AnnouncementDatabase
 from sty import fg
-from values.strategy import *
+from src.stock.values.strategy import *
 
 account_info1 = {
   "public_key": 'PKG77R4EUWQ76WC12PI5',
@@ -32,7 +29,7 @@ account_info1 = {
 }
 
 announcement_database = AnnouncementDatabase()
-report_database = ReportDatabase(report_proxy, None)
+report_database = ReportDatabase(False)
 broker = Broker(account_info1)
 
 def dfToDict(date, prices):

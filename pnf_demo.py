@@ -13,4 +13,5 @@ stock = "F"
 prices = broker.getPriceData(stock, datetime(2021, 8, 9), datetime(2022, 12, 2))
 chart = Chart(stock, 0.25, 3)
 chart.generate(prices.toSimpleDict())
+chart.generateTrends()
 chart.toHtml("dig.html")
