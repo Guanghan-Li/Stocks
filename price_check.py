@@ -17,7 +17,10 @@ account_info1 = {
 }
 
 async def get_profit(broker: Broker, entry: Entry, date):
+  prices1 = broker.getPriceData(entry.stock, date, date)
+  print(prices1)
   prices = await broker.getPrices(entry.stock, date, date)
+  print(prices)
   profit = prices.prices[0].close - entry.open_price
   return (entry.stock, profit)
 

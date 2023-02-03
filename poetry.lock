@@ -116,10 +116,8 @@ description = "Alpaca API python client"
 category = "main"
 optional = false
 python-versions = "*"
-files = [
-    {file = "alpaca-trade-api-2.3.0.tar.gz", hash = "sha256:19e745a09d6695b1b660118826715c48782a7e30290ea1f174b4f008c2ed7be3"},
-    {file = "alpaca_trade_api-2.3.0-py3-none-any.whl", hash = "sha256:8d84e101828d23c3e7e65ca314a7da23e1157d3463544f6ea16b0dccdbeac962"},
-]
+files = []
+develop = true
 
 [package.dependencies]
 aiohttp = "3.8.1"
@@ -132,6 +130,10 @@ requests = ">2,<3"
 urllib3 = ">1.24,<2"
 websocket-client = ">=0.56.0,<2"
 websockets = ">=9.0,<11"
+
+[package.source]
+type = "directory"
+url = "libraries/alpaca-trade-api-python"
 
 [[package]]
 name = "async-timeout"
@@ -1034,6 +1036,10 @@ python-versions = "^3.9"
 files = []
 develop = true
 
+[package.dependencies]
+python-dateutil = "^2.8.2"
+pytz = "^2022.7.1"
+
 [package.source]
 type = "directory"
 url = "../pyoink"
@@ -1432,4 +1438,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "07f91cd59a9b4844ce5bb38a9a208fa71a38114db513085e1ed102f419809698"
+content-hash = "c6a3b779c51d2716d698fe03e393a74f33f194ac0d17c4492d08f428a3f3675a"

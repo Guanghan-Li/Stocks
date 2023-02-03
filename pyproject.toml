@@ -7,7 +7,8 @@ license = "WTFPL"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-alpaca_trade_api = "*"
+# alpaca_trade_api = "*"
+alpaca_trade_api = { path="libraries/alpaca-trade-api-python", develop=true }
 peewee = "*"
 python-dotenv = "*"
 invoke = "*"
