@@ -54,9 +54,8 @@ class Broker:
     start_date = start_date.strftime("%Y-%m-%d")
     end_date = end_date.strftime("%Y-%m-%d")
 
-    whole_data = await self.async_api.get_bars_async(asset, "day", start_date, end_date, adjustment='raw')
-    print(whole_data)
-    prices = Prices.fromDataFrame(asset, whole_data.df)
+    asset, whole_data = await self.async_api.get_bars_async(asset, TimeFrame.Day, start_date, end_date, adjustment='raw')
+    prices = Prices.fromDataFrame(asset, whole_data)
 
     return prices
 

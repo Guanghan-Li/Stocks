@@ -133,16 +133,13 @@ signal.signal(signal.SIGABRT, killed)
 
 def main():
   can_log = True
-  start_date = datetime(2019, 1, 16)
-  end_date = datetime(2023,1,18)
+  start_date = datetime(2019, 1, 30)
+  end_date = datetime(2023,2,1)
   broker_actors = []
-  # task_manager = asys.createActor(TaskManagerActor)
-  # asys.ask(task_manager, SetupMessage({}, log=can_log))
+  task_manager = asys.createActor(TaskManagerActor)
+  asys.ask(task_manager, SetupMessage({}, log=can_log))
   for i in range(4):
     asset_group = amount[i]
-    if "AAPL" in asset_group:
-      print(asset_group.index("AAPL"), len(asset_group))
-    continue
     broker_actor = asys.createActor(BrokerActor)
     broker_actors.append(broker_actor)
     save_price_actor = asys.createActor(SavePriceActor)
@@ -163,13 +160,13 @@ def main():
     asys.ask(gen_report_actor, SetupMessage({"name": f"Gen Report Actor {i}", "save_report_actor": save_report_actor, "task_manager": task_manager}, log=can_log))
 
 
-  # for i in range(4):
-  #   asset_group = amount[i]
-  #   broker_actor = broker_actors[i]
-  #   get_message = GetPriceMessage(asset_group, start_date, end_date)
-  #   asys.tell(broker_actor, get_message)
+  for i in range(4):
+    asset_group = amount[i]
+    broker_actor = broker_actors[i]
+    get_message = GetPriceMessage(asset_group, start_date, end_date)
+    asys.tell(broker_actor, get_message)
 
-  # while True: pass
+  while True: pass
 
 if __name__ == "__main__":
   main()

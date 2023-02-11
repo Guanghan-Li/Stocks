@@ -38,7 +38,7 @@ class Entry:
     self.trend = trend
 
   def dateString(self):
-    return self.date.strftime("%Y-%M-%d")
+    return self.date.strftime("%Y-%m-%d")
 
   @staticmethod
   def fromDB(db_entry):
@@ -75,6 +75,12 @@ class Entry:
       "trend" : self.trend
     }
 
-
+  def to_list(self):
+    return [
+      self.dateString(),
+      self.stock, self.close_price, self.open_price,
+      self.prev_momentum, self.current_momentum,
+      self.acceleration, self.rsi14, self.rsi28, self.column, self.trend
+    ]
   def __str__(self):
     return f"Stock: {self.stock} | Close Price {self.close_price} | Open Price: {self.open_price} | ATR: {self.atr} | Percent ATR: {self.percent_atr} | 2Y Momentum: {self.prev_momentum} | 1Y Momentum: {self.current_momentum} | Accel: {self.acceleration} | RSI14: {self.rsi14} | RSI28: {self.rsi28} | Column: {self.column} | Trend: {self.trend}"
