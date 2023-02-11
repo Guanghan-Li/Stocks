@@ -7,7 +7,8 @@ license = "WTFPL"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-alpaca_trade_api = "*"
+# alpaca_trade_api = "*"
+alpaca_trade_api = { path="libraries/alpaca-trade-api-python", develop=true }
 peewee = "*"
 python-dotenv = "*"
 invoke = "*"
@@ -20,6 +21,8 @@ mplfinance = "*"
 psycopg2-binary = "^2.9.3"
 python-dateutil = "^2.8.2"
 pyoink = {path="../pyoink", develop=true}
+more-itertools = "^9.0.0"
+prettytable = "^3.6.0"
 
 
 [build-system]

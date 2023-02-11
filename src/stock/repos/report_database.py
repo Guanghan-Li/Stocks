@@ -239,8 +239,7 @@ class ReportDatabase:
 
     @staticmethod
     def getChartData(prices: Prices):
-      price = prices.prices[-1]
-      box_size = Chart.getBoxSize(price.open)
+      box_size = Chart.getBoxSizeATR(prices)
       chart = Chart(prices.symbol, box_size, 3)
       chart.generate(prices.toSimpleDict())
       chart.generateTrends()

@@ -1,0 +1,10 @@
+New Column too smallTraceback (most recent call last):
+  File "/mnt/c/Users/Guang/OneDrive/Documents/code/Stock/src/stock/repos/report_database.py", line 256, in generateEntry
+    r = ReportDatabase.getChartData(prices)
+  File "/mnt/c/Users/Guang/OneDrive/Documents/code/Stock/src/stock/repos/report_database.py", line 244, in getChartData
+    chart.generate(prices.toSimpleDict())
+  File "/mnt/c/Users/Guang/OneDrive/Documents/code/pyoink/src/pyoink/values/chart.py", line 81, in generate
+    self.addPrice(price)
+  File "/mnt/c/Users/Guang/OneDrive/Documents/code/pyoink/src/pyoink/values/chart.py", line 75, in addPrice
+    raise Exception("New Column too small")
+Exception: New Column too small
