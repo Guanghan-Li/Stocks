@@ -1,5 +1,7 @@
-run:
+get-prices:
 	@poetry run python3 get_prices.py
+get-reports:
+	@poetry run python3 get_reports.py
 transfer:
 	@poetry run python3 transfer.py
 strategy:

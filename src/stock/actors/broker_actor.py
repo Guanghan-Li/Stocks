@@ -18,7 +18,7 @@ class BrokerActor(ActorTypeDispatcher):
     self.log = Log(message.log)
     self.save_price_actor = message.info.get("save_price_actor", None)
     self.gen_report_actor = message.info.get("gen_report_actor", None)
-    self.task_manager = message.info.get("task_manager", None)
+    self.channel = message.info.get("channel", None)
     self.name = message.info.get("name", "Broker")
     self.broker = Broker(message.info.get("account_info", None))
     self.log.info(f"BrokerActor Got SetupMessage: {self.name}")
@@ -45,10 +45,10 @@ class BrokerActor(ActorTypeDispatcher):
 
       #prices = self.ap.applyAllAnnouncements(asset, prices)
       if (not prices.empty) and prices.amountOfYears() >= 4:
-        if self.save_price_actor != None:
+        if self.save_price_actor is not None:
           save_price_message = SavePriceMessage(asset, prices, sender)
           self.send(self.save_price_actor, save_price_message)
-        if self.gen_report_actor != None:
+        if self.gen_report_actor is not None:
           gen_report_message = GenerateReportMessage(asset, prices, sender)
           self.send(self.gen_report_actor, gen_report_message)
         end = datetime.now()

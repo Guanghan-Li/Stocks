@@ -6,6 +6,7 @@ from src.stock.actors.messages.generate_report import GenerateReportMessage
 from src.stock.actors.messages.save_report import SaveReportMessage
 from src.stock.actors.messages.task_create import TaskCreate
 from src.stock.actors.messages.task_summary import TaskSummary
+from src.stock.actors.messages.get_asset import GetAllAssetsMessage
 
 __all__ = [
   "SetupMessage",
@@ -15,5 +16,6 @@ __all__ = [
   "GenerateReportMessage",
   "SaveReportMessage",
   "TaskCreate",
-  "TaskSummary"
+  "TaskSummary",
+  "GetAllAssetsMessage"
 ]

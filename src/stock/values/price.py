@@ -26,8 +26,9 @@ class Price:
     }
 
   def toDict(self):
+    date = self.date.strftime("%Y-%m-%d")
     return {
-      "date": self.date,
+      "date": date,
       "open": self.open,
       "close": self.close,
       "high": self.high,

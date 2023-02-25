@@ -1,34 +1,17 @@
-import asyncio, threading
 from timeit import *
-import os, math, subprocess, time
-import mplfinance as mpf
 from alpaca_trade_api.rest import *
-from datetime import date, datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from pandas import DataFrame
-from psycopg2 import Timestamp
+from datetime import datetime
 from src.stock.broker import Broker
-#import signal
-from sty import fg
 import signal
-
-from stock.actors.messages import generate_report, save_report
-
-import queue, requests, pytz
-from requests.auth import HTTPBasicAuth
 
 from thespian.actors import *
 from src.stock.actors.broker_actor import BrokerActor
-from src.stock.values.prices import Prices, Price
 from src.stock.actors.save_price import SavePriceActor
-from src.stock.actors.generate_report import GenerateReportActor
-from src.stock.actors.save_report import SaveReportActor
 from src.stock.actors.task_manager import TaskManagerActor
 
 
 from src.stock.actors.messages import *
-
-from src.stock.values.tasks import Tasks, Task
+from chan import Chan
 
 
 # #personal
@@ -115,7 +98,8 @@ asys = ActorSystem("multiprocQueueBase")
 assets = broker.getAllAssets()
 asset_amount = len(assets)
 #assets2 = broker2.getAllAssets(),
-amount = list(zip(*[iter(assets)]*(len(assets)//4)))
+group_amount = 5
+amount = list(zip(*[iter(assets)]*(len(assets)//group_amount)))
 
 
 accounts = [account_info1, account_info2, account_info3, account_info4, account_info5]
@@ -132,35 +116,31 @@ signal.signal(signal.SIGABRT, killed)
 
 
 def main():
+  channel = Chan()
   can_log = True
   start_date = datetime(2019, 1, 30)
   end_date = datetime(2023,2,1)
   broker_actors = []
   task_manager = asys.createActor(TaskManagerActor)
   asys.ask(task_manager, SetupMessage({}, log=can_log))
-  for i in range(4):
+  for i in range(group_amount):
     asset_group = amount[i]
     broker_actor = asys.createActor(BrokerActor)
     broker_actors.append(broker_actor)
     save_price_actor = asys.createActor(SavePriceActor)
-    gen_report_actor = asys.createActor(GenerateReportActor)
-    save_report_actor = asys.createActor(SaveReportActor)
 
     broker_setup = {
       "name": f"Broker {i}",
       "account_info": accounts[i],
       "save_price_actor": save_price_actor,
-      "gen_report_actor": gen_report_actor,
-      "task_manager": task_manager
+      "channel": channel
     }
     setup_message = SetupMessage(broker_setup, log=can_log)
     asys.ask(broker_actor, setup_message)
     asys.ask(save_price_actor, SetupMessage({"name": f"Save Price Actor {i}", "task_manager": task_manager}, log=can_log))
-    asys.ask(save_report_actor, SetupMessage({"name": f"Save Report Actor {i}", "task_manager": task_manager}, log=can_log))
-    asys.ask(gen_report_actor, SetupMessage({"name": f"Gen Report Actor {i}", "save_report_actor": save_report_actor, "task_manager": task_manager}, log=can_log))
 
 
-  for i in range(4):
+  for i in range(group_amount):
     asset_group = amount[i]
     broker_actor = broker_actors[i]
     get_message = GetPriceMessage(asset_group, start_date, end_date)

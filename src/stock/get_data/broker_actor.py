@@ -6,7 +6,7 @@ from datetime import datetime
 from broker import Broker
 
 class BrokerActor(ThreadingActor):
-  def __init__(self, name, save_price_actor, gen_report_actor):
+  def __init__(self, name, save_price_actor=None, gen_report_actor=None):
     super().__init__()
     print(f"{fg.yellow}STARTING{fg.rs} {name}")
     self.name = name
@@ -20,8 +20,10 @@ class BrokerActor(ThreadingActor):
       #print(f"{fg.green}START getPrices{fg.rs} {self.name}")
       prices = broker.getPriceData(asset, start_date=start_date, end_date=end_date, thread_name=self.name)
       if not prices["data"].empty:
-        await self.gen_report_actor.generateReport(prices).get()
-        self.save_price_actor.savePrice.defer(prices)
+        if self.gen_report_actor is not None:
+          await self.gen_report_actor.generateReport(prices).get()
+        if self.save_price_actor is not None:
+          self.save_price_actor.savePrice.defer(prices)
 
         #print(f"{fg.green}END getPrices{fg.rs} {self.name}")
       else:
