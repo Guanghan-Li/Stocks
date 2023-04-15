@@ -1,11 +1,41 @@
-from src.stock.calculate.momentum import Momentum
+from src.stock.values.entry import Entry
+from src.stock.values.strategy import (
+    Strategy,
+    Sorting,
+    Cutoff,
+    Filter
+)
 from datetime import datetime
+from prettytable import PrettyTable
 
 class Report:
-  def __init__(self, date, entries, number_of_positions):
-    self.date = date
-    self.entries: list[Entry] = entries[:number_of_positions]
-    self.stocks = [entry.stock for entry in self.entries]
+  def __init__(self, date, entries, number_of_positions=None):
+    if number_of_positions is None:
+      self.entries: list[Entry] = entries
+    else:
+      self.entries: list[Entry] = entries[:number_of_positions]
+
+    self.date: datetime = date
+
+  def filter_by(self, filters: list[Filter]) -> 'Report':
+    entries = []
+
+    for entry in self.entries:
+      check = [Filter.check_entry(entry, f) for f in filters]
+      if all(check):
+        entries.append(entry)
+    
+    return Report(self.date, entries)
+
+  def sort_by(self, sorting: Sorting) -> 'Report':
+    entries = Sorting.sort(self.entries, sorting)
+    return Report(self.date, entries)
+  
+  def cutoff(self, cutoff: Cutoff) -> 'Report':
+    return Report(self.date, self.entries, number_of_positions=cutoff.value)
+  
+  def run_strategy(self, strategy: Strategy) -> 'Report':
+    return self.filter_by(strategy.filters).sort_by(strategy.initial_sort).cutoff(strategy.cutoff).sort_by(strategy.secondary_sort)
   
   def get(self, stock):
     for entry in self.entries:
@@ -21,66 +51,15 @@ class Report:
     ] + str_entries
     return "\n".join(report)
 
-class Entry:
-  def __init__(self, stock, current_date, open_price, close_price, atr, percent_atr, current_momentum, prev_momentum, acceleration, rsi14, rsi28, column='', trend=''):
-    self.stock = stock
-    self.date: datetime = current_date
-    self.atr = atr
-    self.open_price = open_price
-    self.close_price = close_price
-    self.percent_atr = percent_atr
-    self.current_momentum = round(current_momentum, 4)
-    self.prev_momentum = round(prev_momentum, 4)
-    self.acceleration = round(acceleration, 4)
-    self.rsi14 = round(rsi14, 2)
-    self.rsi28 = round(rsi28, 2)
-    self.column = column
-    self.trend = trend
-
-  def dateString(self):
-    return self.date.strftime("%Y-%m-%d")
-
-  @staticmethod
-  def fromDB(db_entry):
-    return Entry(
-      db_entry.stock,
-      db_entry.date,
-      db_entry.open_price,
-      db_entry.close_price,
-      db_entry.atr,
-      db_entry.percent_atr,
-      db_entry.one_year_momentum,
-      db_entry.two_year_momentum,
-      db_entry.acceleration,
-      db_entry.rsi14,
-      db_entry.rsi28,
-      column = db_entry.column,
-      trend = db_entry.trend
-    )
-  
-  def toDict(self):
-    return {
-      "stock": self.stock,
-      "date" : self.date,
-      "open_price" : self.open_price,
-      "close_price" : self.close_price,
-      "atr" : self.atr,
-      "percent_atr" : self.percent_atr,
-      "one_year_momentum" : self.current_momentum,
-      "two_year_momentum" : self.prev_momentum,
-      "acceleration" : self.acceleration,
-      "rsi14" : self.rsi14,
-      "rsi28": self.rsi28,
-      "column" : self.column,
-      "trend" : self.trend
-    }
-
-  def to_list(self):
-    return [
-      self.dateString(),
-      self.stock, self.close_price, self.open_price,
-      self.prev_momentum, self.current_momentum,
-      self.acceleration, self.rsi14, self.rsi28, self.column, self.trend
+  def pretty(self):
+    headers = [
+      "Stock", "Close Price", "Open Price",
+      "2Y Momentum", "1Y Momentum", "Accel", 
+      "RSI14", "RSI28", "Column", "Trend"
     ]
-  def __str__(self):
-    return f"Stock: {self.stock} | Close Price {self.close_price} | Open Price: {self.open_price} | ATR: {self.atr} | Percent ATR: {self.percent_atr} | 2Y Momentum: {self.prev_momentum} | 1Y Momentum: {self.current_momentum} | Accel: {self.acceleration} | RSI14: {self.rsi14} | RSI28: {self.rsi28} | Column: {self.column} | Trend: {self.trend}"
+    table = PrettyTable(headers)
+
+    for entry in self.entries:
+      table.add_row(entry.to_list()[1:])
+    
+    return table

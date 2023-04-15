@@ -29,19 +29,19 @@ from src.stock.values.tasks import Tasks, Task
 
 from src.stock.repos.price_database import PricesDatabase
 
-actor_amount = 7
+actor_amount = 6
 price_database = PricesDatabase()
 asys = ActorSystem("multiprocQueueBase")
 assets = price_database.database.get_tables()
 asset_amount = len(assets)
 amount = list(zip(*[iter(assets)]*(len(assets)//actor_amount)))
-
+for i, k in enumerate(amount):
+  print(f"Actor {i} -> {len(k)}")
 
 def killed(*args):
   print("SHUTTING DOWN")
   asys.shutdown()
   quit()
-
 
 signal.signal(signal.SIGINT, killed)
 signal.signal(signal.SIGTERM, killed)

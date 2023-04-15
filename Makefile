@@ -15,3 +15,5 @@ stop:
 	@ps -ef | grep stock- | awk '{print $2}' | xargs kill -9
 price-check:
 	@poetry run python3 price_check.py
+strat-check:
+	@poetry run python3 strategy_checker.py

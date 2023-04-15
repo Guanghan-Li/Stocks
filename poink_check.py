@@ -22,9 +22,20 @@ async def joined(session, details):
     prices = broker.getPriceData("AAPL", start, end)
     if prices.prices:
       result = await session.call("my.func", "AAPL", prices.toDict())
+      box_size = result["box_size"]
       print(result)
-      #chart = Chart("symbol")
+  
+      chart = Chart("symbol", box_size, 3)
+      chart.generate(prices.toSimpleDict())
+      chart.generateTrends()
+      print(chart.last_column.direction, chart.trends[-1].direction,box_size)
+      possible_box_size = Chart.getBoxSizeATR(prices, length = 20)
+      chart = Chart("symbol", possible_box_size, 3)
+      chart.generate(prices.toSimpleDict())
+      chart.generateTrends()
+      print(chart.last_column.direction, chart.trends[-1].direction,possible_box_size)
     else:
+       
        print("No prices to send")
     session.leave()
   

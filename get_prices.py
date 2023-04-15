@@ -11,7 +11,6 @@ from src.stock.actors.task_manager import TaskManagerActor
 
 
 from src.stock.actors.messages import *
-from chan import Chan
 
 
 # #personal
@@ -116,10 +115,9 @@ signal.signal(signal.SIGABRT, killed)
 
 
 def main():
-  channel = Chan()
   can_log = True
-  start_date = datetime(2019, 1, 30)
-  end_date = datetime(2023,2,1)
+  start_date = datetime(2019, 2, 20)
+  end_date = datetime(2023,3,29)
   broker_actors = []
   task_manager = asys.createActor(TaskManagerActor)
   asys.ask(task_manager, SetupMessage({}, log=can_log))
@@ -133,7 +131,7 @@ def main():
       "name": f"Broker {i}",
       "account_info": accounts[i],
       "save_price_actor": save_price_actor,
-      "channel": channel
+
     }
     setup_message = SetupMessage(broker_setup, log=can_log)
     asys.ask(broker_actor, setup_message)

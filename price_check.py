@@ -36,23 +36,28 @@ def chunk(arr_range, arr_size):
 
 async def getResults(rd: ReportDatabase, all_stocks):
   now = datetime.now()
-  date = datetime(now.year, now.month, now.day)
+  date = datetime(2023, 3, 8)
+  #date = datetime(now.year, now.month, now.day)
   date = date - relativedelta(days=1)
   broker = Broker(account_info1)
+  
   results = {
     "good": [],
     "bad": []
   }
+
   task_groups = []
   groups = chunk(all_stocks, 50)
   stock_amount = len(all_stocks)
-  for group in list(groups)[:5]:
+  for group in list(groups):
     tasks = []
     for stock in group:
       entries = rd.getMOstRecent(stock)
       entry: Entry = entries[0]
+      if entry.trend != "DOWN" or entry.column!="UP":
+        continue
       if entry.rsi28 >= 35 and entry.rsi14 >=30:
-        task = asyncio.ensure_future(get_profit(broker, entry, date))
+        task = asyncio.create_task(get_profit(broker, entry, date))
         #res = await get_profit(broker, entry, date)
         tasks.append(task)
     if tasks:
@@ -91,20 +96,26 @@ async def main():
   results['good'].sort(key=lambda x: x[1], reverse=True)
   results['bad'].sort(key=lambda x: x[1])
   good = PrettyTable(headers)
-  for stock, profit in results["good"][:10]:
+  for stock, profit in results["good"]:
     entry = rd.getMOstRecent(stock)[0]
     row = entry.to_list() + [round(profit, 3)]
     good.add_row(row)
 
   print(good)
-  print()
+  good_profit = sum([r[-1] for r in good.rows])
+  cost = sum([r[3] for r in good.rows])
+  print("Profit:", good_profit, cost, round((good_profit / cost) * 100, 3) )
+  print("")
   bad = PrettyTable(headers)
-  for stock, profit in results["bad"][:10]:
+  for stock, profit in results["bad"]:
     entry = rd.getMOstRecent(stock)[0]
     row = entry.to_list() + [round(profit, 3)]
     bad.add_row(row)
 
   print(bad)
+  bad_profit = sum([r[-1] for r in bad.rows])
+  cost = sum([r[3] for r in bad.rows])
+  print("Profit:", bad_profit, cost, round((bad_profit / cost) * 100, 3) )
 
   toCsv(headers, good.rows, "good")
   toCsv(headers, bad.rows, "bad")

@@ -30,9 +30,13 @@ class GenerateReportActor(ActorTypeDispatcher):
     self.send(sender, 0)
 
   def receiveMsg_GetAllAssetsMessage(self, message: GetAllAssetsMessage, sender):
-    for asset in message.assets:
+    amount = len(message.assets)
+    for i, asset in enumerate(message.assets):
       prices = self.price_database.getPricesFromDB(asset)
       self.generate_reports(asset, prices)
+      with open(f"{self.name}.status", "w") as f:
+          f.write(f"Amount Left: {amount-(i+1)}")
+    print(f"ACTOR DONE {self.name}")
 
   def generate_reports(self, asset: str, prices: Prices):
     self.all_assets = []
@@ -43,23 +47,22 @@ class GenerateReportActor(ActorTypeDispatcher):
     entry = 1
     entries = []
 
-    task = Task.create(self.name, prices.symbol)
-    self.send(self.task_manager, task.toCreateMessage())
     self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset}")
     start = datetime.now()
-    while weeks > 0 and entry != None:
-      new_task = Task.create(self.name, None)
+    while now.timestamp() > start_date.timestamp():
       weeks -= 1
 
       now -= relativedelta(days=7)
       now = datetime(now.year, now.month, now.day)
       prices = prices.getBefore(now)
 
-      if len(prices) > 0:
+      if len(prices.prices) > 0:
         entry = ReportDatabase.generateEntry(prices)
 
-        if entry != None:
+        if entry is not None:
           entries.append(entry)
+      else:
+        return
     
     end = datetime.now()
     time_spent = (end-start).microseconds*0.001

@@ -101,8 +101,6 @@ class ReportDatabase:
       
       with self.database.atomic():
         table.insert_many(data).execute()
-      
-      print(f"SAVED {entries[0].stock} "*10)
     
     def getMOstRecent(self, symbol) -> list[Entry]:
       table = newReport(symbol)
@@ -173,16 +171,18 @@ class ReportDatabase:
       entries = sorted(entries, key=lambda entry: entry.current_momentum, reverse=False)
       return Report(date, entries, number_of_results)
 
-    def getReportsByWeek(self, date):
+    def getReportsByWeek(self, date: datetime):
       all_stocks = self.database.get_tables()
       db_entries = []
 
       for stock in all_stocks:
         table = newReport(stock)
-        db_entry = table.get_by_id(date)
-        db_entries.append(db_entry)
+        db_entry = list(table.select().limit(1))[0]
+
+        if db_entry.date == date:
+          db_entries.append(Entry.fromDB(db_entry))
       
-      return db_entries
+      return Report(date, db_entries)
 
     def getReports(self, date, strategy: Strategy, stocks_to_exclude: list[str]):
       number_of_results = 10
@@ -192,7 +192,6 @@ class ReportDatabase:
       ordering = Sorting.getFunc(table, strategy.initial_sort)
       secondary_ordering = Sorting.getFunc(table, strategy.secondary_sort)
 
-      #query = table.select().where(table.rsi14 < 50, table.rsi28 < 50, table.rsi28 - table.rsi14 < 4, table.one_year_momentum > 2.3, table.one_year_momentum< 4)
       filters = [Filter.getFunc(table, filter) for filter in strategy.filters]
       query = table.select().where(table.stock.not_in(stocks_to_exclude), *filters)
       query = query.order_by(ordering).limit(strategy.cutoff.value)
@@ -200,6 +199,13 @@ class ReportDatabase:
       results = list(query)
       entries =  [Entry.fromDB(result) for result in results]
       return Report(date, entries, number_of_results)
+    
+    def get_reports(self, date: datetime, strategy: Strategy, stocks_to_exclude: list[str]):
+      report1 = self.getReportsByWeek(date)
+      report1 = report1.run_strategy(strategy)
+      report = Report(date, report1.entries, number_of_positions=strategy.portfolio_size.value)
+
+      return report
 
     def generateWeeklyReports(self, stock, start, end):
       dates = self.getWeeklyDates(start, end)
@@ -239,7 +245,9 @@ class ReportDatabase:
 
     @staticmethod
     def getChartData(prices: Prices):
-      box_size = Chart.getBoxSizeATR(prices)
+      box_size = Chart.getBoxSizeATR(prices, length=20)
+      if box_size <= 0.01:
+        return None, None
       chart = Chart(prices.symbol, box_size, 3)
       chart.generate(prices.toSimpleDict())
       chart.generateTrends()
@@ -251,18 +259,19 @@ class ReportDatabase:
     def generateEntry(prices: Prices):
       if not prices.canGetYears(2):
         return None
-        
+
+      column_direction, trend_direction = "INV", "INV"
+
       try:
         r = ReportDatabase.getChartData(prices)
         column_direction , trend_direction = r
+        if column_direction is None:
+          return None
       except Exception as e:
-        print(f"ERROR -> {prices.symbol} {prices.pretty_date_range}")
-        file_name = f"{prices.symbol}-{prices.pretty_date_range}"
-        with open(f'problem_json/{file_name}.json', 'w') as f:
+        with open (f"{prices.symbol}_prices.json", "w") as f:
           json.dump(prices.toSimpleDict(), f)
-        with open(f"errors/{file_name}.txt", "w") as f:
-          f.write(str(e))
-          f.write(traceback.format_exc())
+        print(f"ERROR -> {prices.symbol} {prices.pretty_date_range}")
+        
         return None
 
       years = prices.getLastYears(2).splitByYear()
