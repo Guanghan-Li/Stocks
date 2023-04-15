@@ -6,4 +6,6 @@ class Order:
         self.price = price
 
     def __str__(self):
-        return 'Order: Stock {}, Amount: {}, Position: {}, Price: {}'.format(self.stock, self.amount, self.position, self.price)
+        return "Order: Stock {}, Amount: {}, Position: {}, Price: {}".format(
+            self.stock, self.amount, self.position, self.price
+        )

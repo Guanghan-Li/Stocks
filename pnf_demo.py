@@ -3,9 +3,9 @@ from stock.broker import Broker
 from datetime import datetime
 
 account_info1 = {
-      "public_key": 'PK22ZH3C6B3Z2JB1JSDC',
-      "private_key": 'ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w',
-      "api_link": 'https://paper-api.alpaca.markets'
+    "public_key": "PK22ZH3C6B3Z2JB1JSDC",
+    "private_key": "ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w",
+    "api_link": "https://paper-api.alpaca.markets",
 }
 
 broker = Broker(account_info1)

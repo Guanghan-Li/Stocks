@@ -5,20 +5,24 @@ from get_data import get_prices
 import asyncio
 
 
+import txaio, asyncio
 
-import txaio,asyncio
 txaio.use_asyncio()
 
 load_dotenv()
 
-@task(help={
-    'test': 'For running tests against the hub',
-})
+
+@task(
+    help={
+        "test": "For running tests against the hub",
+    }
+)
 def start_app(c, test=False):
     asyncio.run(get_prices.main())
 
+
 prices = Collection()
-prices.add_task(start_app, 'get')
+prices.add_task(start_app, "get")
 
 ns = Collection()
-ns.add_collection(prices, 'prices')
+ns.add_collection(prices, "prices")

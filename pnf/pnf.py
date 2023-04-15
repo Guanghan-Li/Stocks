@@ -5,9 +5,10 @@
 0.99
 """
 
+
 class PNF:
     def __init__(self):
         pass
-    
+
     def generateChart(self, prices):
         pass

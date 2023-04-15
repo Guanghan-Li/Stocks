@@ -7,118 +7,132 @@ from itertools import islice
 from prettytable import PrettyTable
 from dateutil.relativedelta import relativedelta
 
+
 @dataclass
 class Results:
-  good=[]
-  bad=[]
+    good = []
+    bad = []
 
-#1
+
+# 1
 account_info1 = {
-      "public_key": 'PK22ZH3C6B3Z2JB1JSDC',
-      "private_key": 'ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w',
-      "api_link": 'https://paper-api.alpaca.markets'
+    "public_key": "PK22ZH3C6B3Z2JB1JSDC",
+    "private_key": "ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w",
+    "api_link": "https://paper-api.alpaca.markets",
 }
 
+
 async def get_profit(broker: Broker, entry: Entry, date):
-  prices = await broker.getPrices(entry.stock, date, date)
-  if prices.prices:
-    profit = prices.prices[0].close - entry.open_price
-    return (entry.stock, profit)
-  
-  return (entry.stock, None)
+    prices = await broker.getPrices(entry.stock, date, date)
+    if prices.prices:
+        profit = prices.prices[0].close - entry.open_price
+        return (entry.stock, profit)
+
+    return (entry.stock, None)
+
 
 def sort_momentum2y(entry: Entry) -> float:
-  return entry[0].prev_momentum
+    return entry[0].prev_momentum
+
 
 def chunk(arr_range, arr_size):
     arr_range = iter(arr_range)
     return iter(lambda: tuple(islice(arr_range, arr_size)), ())
 
-async def getResults(rd: ReportDatabase, all_stocks):
-  now = datetime.now()
-  date = datetime(2023, 3, 8)
-  #date = datetime(now.year, now.month, now.day)
-  date = date - relativedelta(days=1)
-  broker = Broker(account_info1)
-  
-  results = {
-    "good": [],
-    "bad": []
-  }
 
-  task_groups = []
-  groups = chunk(all_stocks, 50)
-  stock_amount = len(all_stocks)
-  for group in list(groups):
-    tasks = []
-    for stock in group:
-      entries = rd.getMOstRecent(stock)
-      entry: Entry = entries[0]
-      if entry.trend != "DOWN" or entry.column!="UP":
-        continue
-      if entry.rsi28 >= 35 and entry.rsi14 >=30:
-        task = asyncio.create_task(get_profit(broker, entry, date))
-        #res = await get_profit(broker, entry, date)
-        tasks.append(task)
-    if tasks:
-      print("Getting results")
-      res = await asyncio.gather(*tasks)
-      stock_amount -= 50
-      print("Got results -> stocks left:", stock_amount)
-      for profit in res:
-        if profit[1] is None:
-          continue
-        if profit[1] < 0:
-          results["bad"].append(profit)
-        else:
-          results["good"].append(profit)
-      
-  return results
+async def getResults(rd: ReportDatabase, all_stocks):
+    now = datetime.now()
+    date = datetime(2023, 3, 8)
+    # date = datetime(now.year, now.month, now.day)
+    date = date - relativedelta(days=1)
+    broker = Broker(account_info1)
+
+    results = {"good": [], "bad": []}
+
+    task_groups = []
+    groups = chunk(all_stocks, 50)
+    stock_amount = len(all_stocks)
+    for group in list(groups):
+        tasks = []
+        for stock in group:
+            entries = rd.getMOstRecent(stock)
+            entry: Entry = entries[0]
+            if entry.trend != "DOWN" or entry.column != "UP":
+                continue
+            if entry.rsi28 >= 35 and entry.rsi14 >= 30:
+                task = asyncio.create_task(get_profit(broker, entry, date))
+                # res = await get_profit(broker, entry, date)
+                tasks.append(task)
+        if tasks:
+            print("Getting results")
+            res = await asyncio.gather(*tasks)
+            stock_amount -= 50
+            print("Got results -> stocks left:", stock_amount)
+            for profit in res:
+                if profit[1] is None:
+                    continue
+                if profit[1] < 0:
+                    results["bad"].append(profit)
+                else:
+                    results["good"].append(profit)
+
+    return results
+
 
 def toCsv(headers, rows, file_name):
-  output = ",".join(headers) + "\n"
-  for row in rows:
-    data = ",".join([str(d) for d in row])
-    output += data + "\n"
-  
-  with open(f"{file_name}.csv", "w") as f:
-    f.write(output)
+    output = ",".join(headers) + "\n"
+    for row in rows:
+        data = ",".join([str(d) for d in row])
+        output += data + "\n"
+
+    with open(f"{file_name}.csv", "w") as f:
+        f.write(output)
+
 
 async def main():
-  headers = [
-    "Date","Stock", "Close Price", "Open Price",
-    "2Y Momentum", "1Y Momentum", "Accel", 
-    "RSI14", "RSI28", "Column", "Trend", "Profit"
-  ]
-  rd = ReportDatabase(log=False)
-  all_stocks = rd.database.get_tables()
-  results = await getResults(rd, all_stocks)
-  results['good'].sort(key=lambda x: x[1], reverse=True)
-  results['bad'].sort(key=lambda x: x[1])
-  good = PrettyTable(headers)
-  for stock, profit in results["good"]:
-    entry = rd.getMOstRecent(stock)[0]
-    row = entry.to_list() + [round(profit, 3)]
-    good.add_row(row)
+    headers = [
+        "Date",
+        "Stock",
+        "Close Price",
+        "Open Price",
+        "2Y Momentum",
+        "1Y Momentum",
+        "Accel",
+        "RSI14",
+        "RSI28",
+        "Column",
+        "Trend",
+        "Profit",
+    ]
+    rd = ReportDatabase(log=False)
+    all_stocks = rd.database.get_tables()
+    results = await getResults(rd, all_stocks)
+    results["good"].sort(key=lambda x: x[1], reverse=True)
+    results["bad"].sort(key=lambda x: x[1])
+    good = PrettyTable(headers)
+    for stock, profit in results["good"]:
+        entry = rd.getMOstRecent(stock)[0]
+        row = entry.to_list() + [round(profit, 3)]
+        good.add_row(row)
 
-  print(good)
-  good_profit = sum([r[-1] for r in good.rows])
-  cost = sum([r[3] for r in good.rows])
-  print("Profit:", good_profit, cost, round((good_profit / cost) * 100, 3) )
-  print("")
-  bad = PrettyTable(headers)
-  for stock, profit in results["bad"]:
-    entry = rd.getMOstRecent(stock)[0]
-    row = entry.to_list() + [round(profit, 3)]
-    bad.add_row(row)
+    print(good)
+    good_profit = sum([r[-1] for r in good.rows])
+    cost = sum([r[3] for r in good.rows])
+    print("Profit:", good_profit, cost, round((good_profit / cost) * 100, 3))
+    print("")
+    bad = PrettyTable(headers)
+    for stock, profit in results["bad"]:
+        entry = rd.getMOstRecent(stock)[0]
+        row = entry.to_list() + [round(profit, 3)]
+        bad.add_row(row)
 
-  print(bad)
-  bad_profit = sum([r[-1] for r in bad.rows])
-  cost = sum([r[3] for r in bad.rows])
-  print("Profit:", bad_profit, cost, round((bad_profit / cost) * 100, 3) )
+    print(bad)
+    bad_profit = sum([r[-1] for r in bad.rows])
+    cost = sum([r[3] for r in bad.rows])
+    print("Profit:", bad_profit, cost, round((bad_profit / cost) * 100, 3))
 
-  toCsv(headers, good.rows, "good")
-  toCsv(headers, bad.rows, "bad")
+    toCsv(headers, good.rows, "good")
+    toCsv(headers, bad.rows, "bad")
+
 
 asyncio.run(main())
-  

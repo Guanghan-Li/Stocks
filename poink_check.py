@@ -5,12 +5,13 @@ from dateutil.relativedelta import relativedelta
 from pyoink.values.chart import Chart
 
 account_info1 = {
-      "public_key": 'PK22ZH3C6B3Z2JB1JSDC',
-      "private_key": 'ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w',
-      "api_link": 'https://paper-api.alpaca.markets'
+    "public_key": "PK22ZH3C6B3Z2JB1JSDC",
+    "private_key": "ihZzYfEPD94xIVzJANzUKpghdg1Y4Z2uCQO9Tn2w",
+    "api_link": "https://paper-api.alpaca.markets",
 }
 component = Component(transports={"url": "ws://0.0.0.0:8080"}, realm="realm1")
 broker = Broker(account_info1)
+
 
 @component.on_join
 async def joined(session, details):
@@ -21,22 +22,24 @@ async def joined(session, details):
     start = date - relativedelta(years=4)
     prices = broker.getPriceData("AAPL", start, end)
     if prices.prices:
-      result = await session.call("my.func", "AAPL", prices.toDict())
-      box_size = result["box_size"]
-      print(result)
-  
-      chart = Chart("symbol", box_size, 3)
-      chart.generate(prices.toSimpleDict())
-      chart.generateTrends()
-      print(chart.last_column.direction, chart.trends[-1].direction,box_size)
-      possible_box_size = Chart.getBoxSizeATR(prices, length = 20)
-      chart = Chart("symbol", possible_box_size, 3)
-      chart.generate(prices.toSimpleDict())
-      chart.generateTrends()
-      print(chart.last_column.direction, chart.trends[-1].direction,possible_box_size)
+        result = await session.call("my.func", "AAPL", prices.toDict())
+        box_size = result["box_size"]
+        print(result)
+
+        chart = Chart("symbol", box_size, 3)
+        chart.generate(prices.toSimpleDict())
+        chart.generateTrends()
+        print(chart.last_column.direction, chart.trends[-1].direction, box_size)
+        possible_box_size = Chart.getBoxSizeATR(prices, length=20)
+        chart = Chart("symbol", possible_box_size, 3)
+        chart.generate(prices.toSimpleDict())
+        chart.generateTrends()
+        print(
+            chart.last_column.direction, chart.trends[-1].direction, possible_box_size
+        )
     else:
-       
-       print("No prices to send")
+        print("No prices to send")
     session.leave()
-  
+
+
 run([component])

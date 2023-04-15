@@ -15,59 +15,63 @@ from src.stock.values.tasks import Task, Tasks
 
 
 class GenerateReportActor(ActorTypeDispatcher):
-  def __init__(self):
-    super().__init__()
-  
-  def receiveMsg_SetupMessage(self, message: SetupMessage, sender):
-    self.report_database = ReportDatabase()
-    self.price_database = PricesDatabase()
-    self.announce_db = AnnouncementDatabase()
-    self.log = Log(message.log)
-    self.name = message.info["name"]
-    self.save_report_actor = message.info["save_report_actor"]
-    self.task_manager = message.info.get("task_manager", None)
-    # self.pnf_actor = message.info["pnf_actor"]
-    self.send(sender, 0)
+    def __init__(self):
+        super().__init__()
 
-  def receiveMsg_GetAllAssetsMessage(self, message: GetAllAssetsMessage, sender):
-    amount = len(message.assets)
-    for i, asset in enumerate(message.assets):
-      prices = self.price_database.getPricesFromDB(asset)
-      self.generate_reports(asset, prices)
-      with open(f"{self.name}.status", "w") as f:
-          f.write(f"Amount Left: {amount-(i+1)}")
-    print(f"ACTOR DONE {self.name}")
+    def receiveMsg_SetupMessage(self, message: SetupMessage, sender):
+        self.report_database = ReportDatabase()
+        self.price_database = PricesDatabase()
+        self.announce_db = AnnouncementDatabase()
+        self.log = Log(message.log)
+        self.name = message.info["name"]
+        self.save_report_actor = message.info["save_report_actor"]
+        self.task_manager = message.info.get("task_manager", None)
+        # self.pnf_actor = message.info["pnf_actor"]
+        self.send(sender, 0)
 
-  def generate_reports(self, asset: str, prices: Prices):
-    self.all_assets = []
-    end_date = prices.end_date
-    start_date = prices.start_date
-    now = end_date
-    weeks = 104
-    entry = 1
-    entries = []
+    def receiveMsg_GetAllAssetsMessage(self, message: GetAllAssetsMessage, sender):
+        amount = len(message.assets)
+        for i, asset in enumerate(message.assets):
+            prices = self.price_database.getPricesFromDB(asset)
+            self.generate_reports(asset, prices)
+            with open(f"{self.name}.status", "w") as f:
+                f.write(f"Amount Left: {amount-(i+1)}")
+        print(f"ACTOR DONE {self.name}")
 
-    self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset}")
-    start = datetime.now()
-    while now.timestamp() > start_date.timestamp():
-      weeks -= 1
+    def generate_reports(self, asset: str, prices: Prices):
+        self.all_assets = []
+        end_date = prices.end_date
+        start_date = prices.start_date
+        now = end_date
+        weeks = 104
+        entry = 1
+        entries = []
 
-      now -= relativedelta(days=7)
-      now = datetime(now.year, now.month, now.day)
-      prices = prices.getBefore(now)
+        self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset}")
+        start = datetime.now()
+        while now.timestamp() > start_date.timestamp():
+            weeks -= 1
 
-      if len(prices.prices) > 0:
-        entry = ReportDatabase.generateEntry(prices)
+            now -= relativedelta(days=7)
+            now = datetime(now.year, now.month, now.day)
+            prices = prices.getBefore(now)
 
-        if entry is not None:
-          entries.append(entry)
-      else:
-        return
-    
-    end = datetime.now()
-    time_spent = (end-start).microseconds*0.001
-    self.log.info(f"{fg.yellow}DONE generateReport{fg.rs} {self.name} | {asset} | took: {time_spent}")
-    if len(entries)>0:
-      self.send(self.save_report_actor, SaveReportMessage(entries, None))
-    else:
-      self.log.info(f"No entries generated skipping {prices.symbol} {prices.pretty_date_range}")
+            if len(prices.prices) > 0:
+                entry = ReportDatabase.generateEntry(prices)
+
+                if entry is not None:
+                    entries.append(entry)
+            else:
+                return
+
+        end = datetime.now()
+        time_spent = (end - start).microseconds * 0.001
+        self.log.info(
+            f"{fg.yellow}DONE generateReport{fg.rs} {self.name} | {asset} | took: {time_spent}"
+        )
+        if len(entries) > 0:
+            self.send(self.save_report_actor, SaveReportMessage(entries, None))
+        else:
+            self.log.info(
+                f"No entries generated skipping {prices.symbol} {prices.pretty_date_range}"
+            )

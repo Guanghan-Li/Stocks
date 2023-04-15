@@ -16,36 +16,37 @@ from src.stock.values.prices import Prices, Price
 
 from src.stock.lib.log.log import Log
 
+
 class ReportYearDatabase:
     def __init__(self, log=False):
         self.proxy = report_proxy
-        #self.proxy.initialize(SqliteDatabase(name))
+        # self.proxy.initialize(SqliteDatabase(name))
         self.database = PostgresqlDatabase(
-          "reports_by_year",
-          user="postgres",
-          password="stock",
-          host="localhost",
-          port=5433
+            "reports_by_year",
+            user="postgres",
+            password="stock",
+            host="localhost",
+            port=5433,
         )
         self.log = Log(can_log=log)
         self.proxy.initialize(self.database)
         self.proxy.connect()
-        #self.price_repo = price_repo
-  
+        # self.price_repo = price_repo
+
     def deleteAll(self):
-      tables = [newReport(t) for t in self.database.get_tables()]
-      self.log.info("Reports Amount Before:", len(tables))
-      self.database.drop_tables(tables)
-      self.log.info("Reports Amount After:", len(self.database.get_tables()))
+        tables = [newReport(t) for t in self.database.get_tables()]
+        self.log.info("Reports Amount Before:", len(tables))
+        self.database.drop_tables(tables)
+        self.log.info("Reports Amount After:", len(self.database.get_tables()))
 
     def saveEntries(self, entries):
-      data = [entry.toDict() for entry in entries]
-      table = newReport(entries[0].stock)
-      tables = self.proxy.get_tables()
-      if table not in tables:
-        self.proxy.create_tables([table])
-      
-      with self.database.atomic():
-        table.insert_many(data).execute()
-      
-      print(f"SAVED {entries[0].stock} "*10)
+        data = [entry.toDict() for entry in entries]
+        table = newReport(entries[0].stock)
+        tables = self.proxy.get_tables()
+        if table not in tables:
+            self.proxy.create_tables([table])
+
+        with self.database.atomic():
+            table.insert_many(data).execute()
+
+        print(f"SAVED {entries[0].stock} " * 10)

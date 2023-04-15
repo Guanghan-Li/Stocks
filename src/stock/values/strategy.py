@@ -93,7 +93,7 @@ class PositionSize(Enum):
 
     def handle_weight() -> list[float]:
         raise NotImplementedError
-    
+
     @staticmethod
     def to_list() -> list["PositionSize"]:
         return [e for e in PositionSize]
@@ -153,7 +153,7 @@ class Strategy:
         cutoff: Cutoff,
         secondary_sort: Sorting,
         portfolio_size: PortfolioSize,
-        position_size: PositionSize
+        position_size: PositionSize,
     ):
         self.filters: list[Filter] = filters
         self.initial_sort: Sorting = initial_sort
@@ -172,5 +172,12 @@ class Strategy:
         position_size = f"Position Size: {self.position_size.value}"
 
         return "Strategy -> " + " | ".join(
-            [filters, initial_sort, cutoff, secondary_sort, portfolio_size, position_size]
+            [
+                filters,
+                initial_sort,
+                cutoff,
+                secondary_sort,
+                portfolio_size,
+                position_size,
+            ]
         )

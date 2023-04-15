@@ -24,7 +24,7 @@ from src.stock.values.strategy import (
     Filter,
     PortfolioSize,
     PositionSize,
-    round_down
+    round_down,
 )
 from threading import Thread
 
@@ -55,21 +55,19 @@ class StrategyResult:
 
     @property
     def profit(self) -> float:
-        profits =  [pr.profit for pr in self.profit_results]
+        profits = [pr.profit for pr in self.profit_results]
         profit = sum(profits)
         return round(profit, 5)
 
     @property
     def percent(self) -> float:
         return round(self.profit / self.cost, 3) * 100
-        
 
     def __str__(self):
         line1 = str(self.strategy)
         line2 = str(self.report.pretty())
         line3 = f"P/L: {self.profit} | Cost: {self.cost} | Percent: {self.percent}"
         lines = ["", line1, line2, line3, ""]
-
 
         return "\n".join(lines)
 
@@ -81,19 +79,29 @@ account_info1 = {
 }
 
 
-async def get_profit(broker: Broker, entry: Entry, date: datetime, percent: float) -> ProfitResult:
+async def get_profit(
+    broker: Broker, entry: Entry, date: datetime, percent: float
+) -> ProfitResult:
     prices = await broker.getPrices(entry.stock, date, date)
     budget = 10_000
     units = get_units(budget, percent, entry.open_price)
     buy_price = entry.open_price * units
     if prices.prices:
-        profit = (prices.prices[0].close*units) - (entry.open_price*units)
-        return ProfitResult(symbol=entry.stock, profit=profit, cost=buy_price, buy_price=entry.open_price, units=units)
+        profit = (prices.prices[0].close * units) - (entry.open_price * units)
+        return ProfitResult(
+            symbol=entry.stock,
+            profit=profit,
+            cost=buy_price,
+            buy_price=entry.open_price,
+            units=units,
+        )
 
     return ProfitResult(symbol=entry.stock)
 
 
-async def get_all_profit(broker: Broker, entries: list[Entry], date: datetime, strategy: Strategy):
+async def get_all_profit(
+    broker: Broker, entries: list[Entry], date: datetime, strategy: Strategy
+):
     tasks = []
     percents = strategy.position_size.handle(len(entries))
     data = dict(zip(entries, percents))
@@ -151,9 +159,7 @@ async def run_strategy(
     report = report_database.get_reports(now, strategy, [])
     results = await get_all_profit(broker, report.entries, later, strategy)
 
-    return StrategyResult(
-        report=report, profit_results=results, strategy=strategy
-    )
+    return StrategyResult(report=report, profit_results=results, strategy=strategy)
 
 
 async def main():

@@ -8,7 +8,8 @@ from dateutil.relativedelta import relativedelta
 from pandas import DataFrame
 from psycopg2 import Timestamp
 from src.stock.broker import Broker
-#import signal
+
+# import signal
 from sty import fg
 import signal
 
@@ -34,14 +35,16 @@ price_database = PricesDatabase()
 asys = ActorSystem("multiprocQueueBase")
 assets = price_database.database.get_tables()
 asset_amount = len(assets)
-amount = list(zip(*[iter(assets)]*(len(assets)//actor_amount)))
+amount = list(zip(*[iter(assets)] * (len(assets) // actor_amount)))
 for i, k in enumerate(amount):
-  print(f"Actor {i} -> {len(k)}")
+    print(f"Actor {i} -> {len(k)}")
+
 
 def killed(*args):
-  print("SHUTTING DOWN")
-  asys.shutdown()
-  quit()
+    print("SHUTTING DOWN")
+    asys.shutdown()
+    quit()
+
 
 signal.signal(signal.SIGINT, killed)
 signal.signal(signal.SIGTERM, killed)
@@ -49,26 +52,44 @@ signal.signal(signal.SIGABRT, killed)
 
 
 def main():
-  can_log = True
-  report_actors = []
-  task_manager = asys.createActor(TaskManagerActor)
-  asys.ask(task_manager, SetupMessage({}, log=can_log))
-  for i in range(actor_amount):
-    asset_group = amount[i]
-    gen_report_actor = asys.createActor(GenerateReportActor)
-    save_report_actor = asys.createActor(SaveReportActor)
+    can_log = True
+    report_actors = []
+    task_manager = asys.createActor(TaskManagerActor)
+    asys.ask(task_manager, SetupMessage({}, log=can_log))
+    for i in range(actor_amount):
+        asset_group = amount[i]
+        gen_report_actor = asys.createActor(GenerateReportActor)
+        save_report_actor = asys.createActor(SaveReportActor)
 
-    asys.ask(save_report_actor, SetupMessage({"name": f"Save Report Actor {i}", "task_manager": task_manager}, log=can_log))
-    asys.ask(gen_report_actor, SetupMessage({"name": f"Gen Report Actor {i}", "save_report_actor": save_report_actor, "task_manager": task_manager}, log=can_log))
-    report_actors.append(gen_report_actor)
+        asys.ask(
+            save_report_actor,
+            SetupMessage(
+                {"name": f"Save Report Actor {i}", "task_manager": task_manager},
+                log=can_log,
+            ),
+        )
+        asys.ask(
+            gen_report_actor,
+            SetupMessage(
+                {
+                    "name": f"Gen Report Actor {i}",
+                    "save_report_actor": save_report_actor,
+                    "task_manager": task_manager,
+                },
+                log=can_log,
+            ),
+        )
+        report_actors.append(gen_report_actor)
 
-  for i in range(actor_amount):
-    asset_group = amount[i]
-    gen_report_actor = report_actors[i]
-    message = GetAllAssetsMessage(asset_group, None)
-    asys.tell(gen_report_actor, message)
+    for i in range(actor_amount):
+        asset_group = amount[i]
+        gen_report_actor = report_actors[i]
+        message = GetAllAssetsMessage(asset_group, None)
+        asys.tell(gen_report_actor, message)
 
-  while True: pass
+    while True:
+        pass
+
 
 if __name__ == "__main__":
-  main()
+    main()

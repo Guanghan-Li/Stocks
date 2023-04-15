@@ -23,41 +23,40 @@ start_time = time.time()
 
 
 def rebalance(stocks_to_order):
-  sell_orders = []
-  buy_orders = []
+    sell_orders = []
+    buy_orders = []
 
-  order_stocks = [order.stock for order in stocks_to_order]
-  portfolio = broker.api.list_positions()
-  position_stocks = [position.symbol for position in portfolio]
+    order_stocks = [order.stock for order in stocks_to_order]
+    portfolio = broker.api.list_positions()
+    position_stocks = [position.symbol for position in portfolio]
 
-  for position in portfolio:
-    if position.symbol not in order_stocks:
-      order = Order(position.symbol, position.qty, 'sell')
-      sell_orders.append(order)
+    for position in portfolio:
+        if position.symbol not in order_stocks:
+            order = Order(position.symbol, position.qty, "sell")
+            sell_orders.append(order)
 
-    if position.symbol in order_stocks:
-      stock = [order for order in stocks_to_order if order.stock == position.symbol][0]
-      difference = stock.amount - int(position.qty)
-      if (difference > 0):
-        order = Order(position.symbol, difference, 'buy')
-        buy_orders.append(order)
-      else:
-        order = Order(position.symbol, difference, 'sell')
-        sell_orders.append(order)
+        if position.symbol in order_stocks:
+            stock = [
+                order for order in stocks_to_order if order.stock == position.symbol
+            ][0]
+            difference = stock.amount - int(position.qty)
+            if difference > 0:
+                order = Order(position.symbol, difference, "buy")
+                buy_orders.append(order)
+            else:
+                order = Order(position.symbol, difference, "sell")
+                sell_orders.append(order)
 
-  for position in stocks_to_order:
-    if position.stock not in position_stocks:
-      order = Order(position.stock, position.amount, 'buy')
-      buy_orders.append(order)
+    for position in stocks_to_order:
+        if position.stock not in position_stocks:
+            order = Order(position.stock, position.amount, "buy")
+            buy_orders.append(order)
 
-  orders = sell_orders + buy_orders
-  return orders
-  
-
+    orders = sell_orders + buy_orders
+    return orders
 
 
-
-#report = reports_database.generateReport()
+# report = reports_database.generateReport()
 
 # account = api.get_account()
 # buying_power = float(account.buying_power) // 1
@@ -67,15 +66,15 @@ def rebalance(stocks_to_order):
 # for order in orders:
 #   print(order)
 
-#executeOrders(orders, order)
+# executeOrders(orders, order)
 
 now = date(2019, 11, 20)
 for i in range(104):
-  print('Making report for the date:', now)
-  reports_database.saveReport(now)
-  now += relativedelta(days=7)
+    print("Making report for the date:", now)
+    reports_database.saveReport(now)
+    now += relativedelta(days=7)
 
-'''
+"""
 now = date(2021,9,1)
 def getNewReport(date):
   return reports_database.getTopResults(date, number_of_results=100)
@@ -132,8 +131,8 @@ def getMoney(reports):
 printReports(reports)
 getMoney(reports)
 
-'''
-'''
+"""
+"""
 portfolio = Portfolio()
 position_stocks = [position.stock for position in portfolio.positions]
 report = getNewReport(now)
@@ -154,10 +153,7 @@ for position in portfolio.positions:
     order = Order(position.stock, position.amount, "SELL", position.price)
     orders.insert(0, order)
 
-'''
-
-
+"""
 
 
 print("My program took", time.time() - start_time, "to run")
-

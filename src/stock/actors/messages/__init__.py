@@ -9,13 +9,13 @@ from src.stock.actors.messages.task_summary import TaskSummary
 from src.stock.actors.messages.get_asset import GetAllAssetsMessage
 
 __all__ = [
-  "SetupMessage",
-  "SavePriceMessage",
-  "GetPriceMessage",
-  "TaskFinishedMessage",
-  "GenerateReportMessage",
-  "SaveReportMessage",
-  "TaskCreate",
-  "TaskSummary",
-  "GetAllAssetsMessage"
+    "SetupMessage",
+    "SavePriceMessage",
+    "GetPriceMessage",
+    "TaskFinishedMessage",
+    "GenerateReportMessage",
+    "SaveReportMessage",
+    "TaskCreate",
+    "TaskSummary",
+    "GetAllAssetsMessage",
 ]
