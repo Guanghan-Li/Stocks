@@ -50,11 +50,11 @@ class GenerateReportActor(ActorTypeDispatcher):
         self.log.info(f"{fg.yellow}START generateReport{fg.rs} {self.name} {asset}")
         start = datetime.now()
         while now.timestamp() > start_date.timestamp():
+            now = datetime(now.year, now.month, now.day)
+            prices = prices.getBefore(now)
             weeks -= 1
 
             now -= relativedelta(days=7)
-            now = datetime(now.year, now.month, now.day)
-            prices = prices.getBefore(now)
 
             if len(prices.prices) > 0:
                 entry = ReportDatabase.generateEntry(prices)

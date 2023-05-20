@@ -1,12 +1,21 @@
-class Position:
-    def __init__(self, stock, price, amount):
-        self.stock = stock
-        self.price = price
-        self.amount = amount
+from pydantic import BaseModel
+
+class Position(BaseModel):
+    stock: str
+    price: float
+    amount: int = 1
 
     @property
     def value(self):
-        return self.price * self.amount
+        return round(self.price * self.amount,2)
+    
+    def to_list(self) -> list:
+        return [
+            self.stock,
+            self.price,
+            self.amount,
+            self.value
+        ]
 
 
 class Portfolio:

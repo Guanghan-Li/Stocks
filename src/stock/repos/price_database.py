@@ -15,7 +15,6 @@ from src.stock.lib.log.log import Log
 
 class PricesDatabase:
     def __init__(self, proxyA=None, db_path=None, log=False):
-        info = {"name": db_path, "engine": "peewee.SqliteDatabase"}
         self.log = Log(can_log=log)
         self.proxy: DatabaseProxy = price_proxy
         self.database = PostgresqlDatabase(

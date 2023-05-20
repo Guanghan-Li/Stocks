@@ -6,3 +6,4 @@ rd = ReportDatabase(log=True)
 pd.deleteAll()
 rd.deleteAll()
 print("DONE")
+ 

@@ -1,78 +1,52 @@
 from datetime import datetime
 
+from pydantic import BaseModel, Field, root_validator
 
-class Entry:
-    def __init__(
-        self,
-        stock,
-        current_date,
-        open_price,
-        close_price,
-        atr,
-        percent_atr,
-        current_momentum,
-        prev_momentum,
-        acceleration,
-        rsi14,
-        rsi28,
-        column="",
-        trend="",
-    ):
-        self.stock = stock
-        self.date: datetime = current_date
-        self.atr = atr
-        self.open_price = open_price
-        self.close_price = close_price
-        self.percent_atr = percent_atr
-        self.current_momentum = round(current_momentum, 4)
-        self.prev_momentum = round(prev_momentum, 4)
-        self.acceleration = round(acceleration, 4)
-        self.rsi14 = round(rsi14, 2)
-        self.rsi28 = round(rsi28, 2)
-        self.column = column
-        self.trend = trend
+class Entry(BaseModel):
+    stock: str 
+    current_date: datetime = Field(..., alias="date")
+    open_price: float
+    close_price: float
+    atr: float
+    percent_atr: float
+    current_momentum: float = Field(..., alias="one_year_momentum")
+    prev_momentum: float = Field(..., alias="two_year_momentum")
+    acceleration: float
+    rsi14: float
+    rsi28: float
+    column: str = ""
+    trend: str = ""
 
-    def dateString(self):
-        return self.date.strftime("%Y-%m-%d")
+    def __hash__(self) -> int:
+        return hash(f"{self.stock}{self.date_string()}")
+
+    class Config:
+        allow_population_by_field_name = True
+
+    def date_string(self):
+        return self.current_date.strftime("%Y-%m-%d")
 
     @staticmethod
     def fromDB(db_entry):
         return Entry(
-            db_entry.stock,
-            db_entry.date,
-            db_entry.open_price,
-            db_entry.close_price,
-            db_entry.atr,
-            db_entry.percent_atr,
-            db_entry.one_year_momentum,
-            db_entry.two_year_momentum,
-            db_entry.acceleration,
-            db_entry.rsi14,
-            db_entry.rsi28,
+            stock=db_entry.stock,
+            current_date=db_entry.date,
+            open_price=db_entry.open_price,
+            close_price=db_entry.close_price,
+            atr=db_entry.atr,
+            percent_atr=db_entry.percent_atr,
+            current_momentum=db_entry.one_year_momentum,
+            prev_momentum=db_entry.two_year_momentum,
+            acceleration=db_entry.acceleration,
+            rsi14=db_entry.rsi14,
+            rsi28=db_entry.rsi28,
             column=db_entry.column,
             trend=db_entry.trend,
         )
 
-    def toDict(self):
-        return {
-            "stock": self.stock,
-            "date": self.date,
-            "open_price": self.open_price,
-            "close_price": self.close_price,
-            "atr": self.atr,
-            "percent_atr": self.percent_atr,
-            "one_year_momentum": self.current_momentum,
-            "two_year_momentum": self.prev_momentum,
-            "acceleration": self.acceleration,
-            "rsi14": self.rsi14,
-            "rsi28": self.rsi28,
-            "column": self.column,
-            "trend": self.trend,
-        }
-
     def to_list(self):
         return [
-            self.dateString(),
+            self.date_string(),
             self.stock,
             self.close_price,
             self.open_price,

@@ -32,7 +32,7 @@ class Prices:
 
     @property
     def pretty_date_range(self) -> str:
-        return self.pretty_start_date + "-" + self.pretty_end_date
+        return self.pretty_start_date + " / " + self.pretty_end_date
 
     def __str__(self):
         start_date = self.start_date.strftime("%Y-%m-%d")

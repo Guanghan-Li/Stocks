@@ -28,7 +28,7 @@ class Report:
         return Report(self.date, entries)
 
     def cutoff(self, cutoff: Cutoff) -> "Report":
-        return Report(self.date, self.entries, number_of_positions=cutoff.value)
+        return Report(self.date, self.entries, number_of_positions=cutoff)
 
     def run_strategy(self, strategy: Strategy) -> "Report":
         return (

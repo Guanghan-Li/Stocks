@@ -7,14 +7,11 @@ license = "WTFPL"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-# alpaca_trade_api = "*"
-alpaca_trade_api = { path="libraries/alpaca-trade-api-python", develop=true }
+alpaca_trade_api = { path="library/alpaca-trade-api-python", develop=true }
 peewee = "*"
 python-dotenv = "*"
 invoke = "*"
 sty = "*"
-schema = "*"
-pymonad = "*"
 thespian = "*"
 janus = "*"
 mplfinance = "*"
@@ -26,9 +23,9 @@ prettytable = "^3.6.0"
 autobahn = {version="^23.1.2", extras=["serialization"]}
 flake8 = "^6.0.0"
 autoflake = "^2.0.1"
-chan = "^0.3.1"
 black = "^23.1.0"
 tqdm = "^4.65.0"
+pydantic = "^1.10.7"
 
 
 [build-system]

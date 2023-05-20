@@ -1,5 +1,6 @@
 import asyncio
 import math
+import json
 from alpaca_trade_api.rest import *
 from src.stock.repos.report_model import *
 from src.stock.repos.price_database import *
@@ -28,24 +29,33 @@ from src.stock.values.strategy import (
 )
 from threading import Thread
 
+from pydantic import BaseModel
+from typing import Optional
 
-@dataclass
-class ProfitResult:
+
+
+class ProfitResult(BaseModel):
     symbol: str
-    profit: float = None
-    cost: float = None
-    buy_price: float = None
-    units: int = None
+    profit: Optional[float] = None
+    cost: Optional[float] = None
+    buy_price: Optional[float] = None
+    units: Optional[int] = None
 
     def is_valid(self) -> bool:
         return self.profit is not None or self.cost is not None
 
 
-@dataclass
-class StrategyResult:
+class StrategyResult(BaseModel):
     report: Report
     strategy: Strategy
     profit_results: list[ProfitResult]
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self.profit_results) < 1
 
     @property
     def cost(self) -> float:
@@ -61,6 +71,9 @@ class StrategyResult:
 
     @property
     def percent(self) -> float:
+        if self.cost == 0:
+            raise Exception(f"Cost should not be zero -> {self.cost}")
+        
         return round(self.profit / self.cost, 3) * 100
 
     def __str__(self):
@@ -103,7 +116,11 @@ async def get_all_profit(
     broker: Broker, entries: list[Entry], date: datetime, strategy: Strategy
 ):
     tasks = []
-    percents = strategy.position_size.handle(len(entries))
+
+    if len(entries) == 0:
+        return []
+    position_size = PositionSize(strategy.position_size)
+    percents = position_size.handle(len(entries))
     data = dict(zip(entries, percents))
     for entry, percent in data.items():
         task = asyncio.create_task(get_profit(broker, entry, date, percent))
@@ -138,9 +155,11 @@ def generate_strategies():
         PositionSize.to_list(),
     )
     strategies = []
+    fields = ["filters", "initial_sort", "cutoff", "secondary_sort", "portfolio_size", "position_size"]
     for strat in p:
         options = [[Filter.COLUMN_UP, Filter.TREND_UP]] + list(strat)
-        strategy = Strategy(*options)
+        options= dict(zip(fields, options))
+        strategy = Strategy(**options)
         strategies.append(strategy)
 
     return strategies
@@ -154,7 +173,8 @@ async def run_strategy(
     report_database: ReportDatabase, account_info: dict, strategy: Strategy
 ) -> StrategyResult:
     broker = Broker(account_info)
-    now = datetime(2023, 3, 22)
+    now = datetime(2023, 5, 10)
+    # now = report_database.get_latest_date()
     later = now + relativedelta(weeks=1)
     report = report_database.get_reports(now, strategy, [])
     results = await get_all_profit(broker, report.entries, later, strategy)
@@ -167,7 +187,7 @@ async def main():
     report_database = ReportDatabase()
     results = []
     loop = asyncio.get_running_loop()
-    for strategies in tqdm(all_strategies[:10]):
+    for strategies in tqdm(all_strategies[:2]):
         tasks = []
 
         for strategy in strategies:
@@ -178,9 +198,12 @@ async def main():
         result = await asyncio.gather(*tasks)
         results += result
 
-    results = sorted(results, key=lambda r: r.profit, reverse=True)
-    for r in results[:2]:
+    results: list[Strategy] = sorted(results, key=lambda r: r.profit, reverse=True)
+    for r in results[:4]:
         print(r)
-
+    
+    best_strategy: StrategyResult = results[0]
+    with open("best_strategy.json", "w") as f:
+        json.dump(best_strategy.strategy.dict(), f)
 
 asyncio.run(main())

@@ -11,7 +11,7 @@ from src.stock.values.report import Entry, Report
 from time import sleep, strftime
 from peewee import FieldAccessor
 import traceback
-from pyoink.values.chart import Chart
+from pyoink.values.chart import Chart, Direction
 
 from src.stock.values.strategy import *
 from src.stock.values.prices import Prices, Price
@@ -37,10 +37,8 @@ class ReportDatabase:
 
     def deleteAll(self):
         tables = [newReport(t) for t in self.database.get_tables()]
-        self.log.info("Reports Amount Before:", len(tables))
         for t in chunked(tables, 50):
             self.database.drop_tables(t)
-        self.log.info("Reports Amount After:", len(self.database.get_tables()))
 
     def getEntryByDate(self, symbol, date):
         table: ReportsModel = newReport(symbol)
@@ -82,13 +80,13 @@ class ReportDatabase:
         if table not in tables:
             self.proxy.create_tables([table])
         with self.database.atomic():
-            table.create(**entry.toDict())
+            table.create(**entry.dict(by_alias=True))
             self.log.info(f"Saved {entry.stock} on {entry.dateString()}")
 
     def saveEntries(self, entries):
-        data = [entry.toDict() for entry in entries]
+        data = [entry.dict(by_alias=True) for entry in entries]
+
         if not entries:
-            print("GOt None")
             return None
         table = newReport(entries[0].stock)
         tables = self.proxy.get_tables()
@@ -182,11 +180,13 @@ class ReportDatabase:
 
         for stock in all_stocks:
             table = newReport(stock)
-            db_entry = list(table.select().limit(1))[0]
+            
+            count = table.select().where(table.date == date).count()
+            if count == 0:
+                continue
 
-            if db_entry.date == date:
-                db_entries.append(Entry.fromDB(db_entry))
-
+            db_entry = list(table.select().where(table.date == date))[0]
+            db_entries.append(Entry.fromDB(db_entry))
         return Report(date, db_entries)
 
     def getReports(self, date, strategy: Strategy, stocks_to_exclude: list[str]):
@@ -199,9 +199,9 @@ class ReportDatabase:
 
         filters = [Filter.getFunc(table, filter) for filter in strategy.filters]
         query = table.select().where(table.stock.not_in(stocks_to_exclude), *filters)
-        query = query.order_by(ordering).limit(strategy.cutoff.value)
-        query = query.order_by(secondary_ordering).limit(strategy.portfolio_size.value)
-        results = list(query)
+        query = query.order_by(ordering).limit(strategy.cutoff)
+        query = query.order_by(secondary_ordering).limit(strategy.portfolio_size+3)
+        results = list(query)[3:]
         entries = [Entry.fromDB(result) for result in results]
         return Report(date, entries, number_of_results)
 
@@ -211,7 +211,7 @@ class ReportDatabase:
         report1 = self.getReportsByWeek(date)
         report1 = report1.run_strategy(strategy)
         report = Report(
-            date, report1.entries, number_of_positions=strategy.portfolio_size.value
+            date, report1.entries, number_of_positions=strategy.portfolio_size
         )
 
         return report
@@ -263,8 +263,8 @@ class ReportDatabase:
         chart = Chart(prices.symbol, box_size, 3)
         chart.generate(prices.toSimpleDict())
         chart.generateTrends()
-        column_direction = ("DOWN", "UP")[chart.last_direction.value]
-        trend_direction = ("DOWN", "UP")[chart.trends[-1].direction.value]
+        column_direction = ("DOWN", "UP")[chart.last_direction == Direction.up]
+        trend_direction = ("DOWN", "UP")[chart.trends[-1].direction == Direction.up]
         return column_direction, trend_direction
 
     @staticmethod
@@ -282,7 +282,7 @@ class ReportDatabase:
         except Exception as e:
             with open(f"{prices.symbol}_prices.json", "w") as f:
                 json.dump(prices.toSimpleDict(), f)
-            print(f"ERROR -> {prices.symbol} {prices.pretty_date_range}")
+            print(f"ERROR -> {prices.symbol} {prices.pretty_date_range} -> {e}")
 
             return None
 
@@ -296,21 +296,21 @@ class ReportDatabase:
         rsi14 = Momentum.calculateRsis(prices, 14)[-1]
         rsi28 = Momentum.calculateRsis(prices, 28)[-1]
 
-        acceleration = prev_momentum - current_momentum
+        acceleration = current_momentum - prev_momentum
         price = prices.prices[-1]
 
         entry = Entry(
-            prices.symbol,
-            prices.end_date,
-            price.open,
-            price.close,
-            0,
-            0,
-            current_momentum,
-            prev_momentum,
-            acceleration,
-            rsi14,
-            rsi28,
+            stock=prices.symbol,
+            current_date=prices.end_date,
+            open_price=price.open,
+            close_price=price.close,
+            atr=0,
+            percent_atr=0,
+            current_momentum=current_momentum,
+            prev_momentum=prev_momentum,
+            acceleration=acceleration,
+            rsi14 = rsi14,
+            rsi28 = rsi28,
             column=column_direction,
             trend=trend_direction,
         )

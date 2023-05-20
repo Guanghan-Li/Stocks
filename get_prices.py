@@ -8,7 +8,7 @@ from thespian.actors import *
 from src.stock.actors.broker_actor import BrokerActor
 from src.stock.actors.save_price import SavePriceActor
 from src.stock.actors.task_manager import TaskManagerActor
-
+from dateutil.relativedelta import relativedelta
 
 from src.stock.actors.messages import *
 
@@ -19,7 +19,7 @@ from src.stock.actors.messages import *
 #       "private_key": 'YvNim9ia5ov4oJ7WHLv6ElPYQMcMTZMMTP3pLjtp',
 #       "api_link": 'https://paper-api.alpaca.markets'
 # }
-# #08
+# #08S
 # account_info2 = {
 #   "public_key": "PKAJ6YB539JWBMJT81Q8",
 #   "private_key": "clxZoMjA1rc7RFA42aFcbnAwggp95buT1bwGCHxe",
@@ -117,8 +117,8 @@ signal.signal(signal.SIGABRT, killed)
 
 def main():
     can_log = True
-    start_date = datetime(2019, 2, 20)
-    end_date = datetime(2023, 3, 29)
+    end_date = datetime(2023, 5, 17)
+    start_date = end_date - relativedelta(weeks=53*4)
     broker_actors = []
     task_manager = asys.createActor(TaskManagerActor)
     asys.ask(task_manager, SetupMessage({}, log=can_log))

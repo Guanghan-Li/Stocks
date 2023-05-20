@@ -3,6 +3,8 @@ from enum import Enum
 from src.stock.values.entry import Entry
 import decimal
 
+from pydantic import BaseModel
+
 
 def round_down(value, decimal_place):
     with decimal.localcontext() as ctx:
@@ -11,18 +13,17 @@ def round_down(value, decimal_place):
         return float(round(d, decimal_place))
 
 
-class Filter(Enum):
-    ACCELERATION_MIN = ("acceleration", "min", -2)
-    ACCELERATION_MAX = ("acceleration", "max", 0)
-    # MOMENTUM_MIN = ("momentum", "min", 1)
-    RSI14_MIN = ("rsi14", "min", 20)
-    RSI14_MAX = ("rsi14", "max", 45)
-    RSI28_MIN = ("rsi28", "min", 25)
-    RSI28_MAX = ("rsi28", "max", 50)
-    TREND_UP = ("trend", "UP")
-    TREND_DOWN = ("trend", "DOWN")
-    COLUMN_UP = ("column", "UP")
-    COLUMN_DOWN = ("column", "DOWN")
+class Filter(list, Enum):
+    ACCELERATION_MIN = ["acceleration", "min", -2]
+    ACCELERATION_MAX = ["acceleration", "max", 0]
+    RSI14_MIN = ["rsi14", "min", 20]
+    RSI14_MAX = ["rsi14", "max", 45]
+    RSI28_MIN = ["rsi28", "min", 25]
+    RSI28_MAX = ["rsi28", "max", 50]
+    TREND_UP = ["trend", "UP"]
+    TREND_DOWN = ["trend", "DOWN"]
+    COLUMN_UP = ["column", "UP"]
+    COLUMN_DOWN = ["column", "DOWN"]
 
     @staticmethod
     def getFunc(table, filter):
@@ -35,9 +36,8 @@ class Filter(Enum):
             return table.__getattribute__(table, values[0]).field <= values[2]
 
     def check_entry(entry, filter: "Filter") -> bool:
-        values = filter.value
-        if len(values) == 2:
-            return entry.__getattribute__(values[0]) == values[1]
+        if len(filter) == 2:
+            return entry.__getattribute__(filter[0]) == filter[1]
 
         raise Exception("Not implemented for filter")
 
@@ -46,7 +46,7 @@ class Filter(Enum):
         return [e for e in Filter]
 
 
-class Cutoff(Enum):
+class Cutoff(int, Enum):
     TEN = 10
     FIFTY = 50
     HUNDRED = 100
@@ -56,7 +56,7 @@ class Cutoff(Enum):
         return [e for e in Cutoff]
 
 
-class PositionSize(Enum):
+class PositionSize(str, Enum):
     EQUAL = "equal"
     RANKING = "ranking"
     # WEIGHT = "weight"
@@ -99,17 +99,17 @@ class PositionSize(Enum):
         return [e for e in PositionSize]
 
 
-class Sorting(Enum):
-    ACCELERATION_UP = ("acceleration", "asc")
-    ACCELERATION_DOWN = ("acceleration", "desc")
-    YEARLY_MOMENTUM_UP = ("current_momentum", "asc")
-    YEARLY_MOMENTUM_DOWN = ("current_momentum", "desc")
-    TWO_YEAR_MOMENTUM_UP = ("prev_momentum", "asc")
-    TWO_YEAR_MOMENTUM_DOWN = ("prev_momentum", "desc")
-    RSI14_UP = ("rsi14", "asc")
-    RSI14_DOWN = ("rsi14", "desc")
-    RSI28_UP = ("rsi28", "asc")
-    RSI28_DOWN = ("rsi28", "desc")
+class Sorting(list, Enum):
+    ACCELERATION_UP = ["acceleration", "asc"]
+    ACCELERATION_DOWN = ["acceleration", "desc"]
+    YEARLY_MOMENTUM_UP = ["current_momentum", "asc"]
+    YEARLY_MOMENTUM_DOWN = ["current_momentum", "desc"]
+    TWO_YEAR_MOMENTUM_UP = ["prev_momentum", "asc"]
+    TWO_YEAR_MOMENTUM_DOWN = ["prev_momentum", "desc"]
+    RSI14_UP = ["rsi14", "asc"]
+    RSI14_DOWN = ["rsi14", "desc"]
+    RSI28_UP = ["rsi28", "asc"]
+    RSI28_DOWN = ["rsi28", "desc"]
     # DIFFERENCE_UP = "DIFFERENCE_UP"
     # DIFFERENCE_DOWN = "DIFFERENCE_DOWN"
 
@@ -122,7 +122,7 @@ class Sorting(Enum):
 
     @staticmethod
     def sort(entries: list[Entry], sorting: "Sorting") -> list[Entry]:
-        field, order = sorting.value
+        field, order = sorting
         reverse = order == "desc"
 
         def unpack(entry: Entry):
@@ -135,7 +135,7 @@ class Sorting(Enum):
         return [e for e in Sorting]
 
 
-class PortfolioSize(Enum):
+class PortfolioSize(int, Enum):
     TWO = 2
     FOUR = 4
     SIX = 6
@@ -145,31 +145,25 @@ class PortfolioSize(Enum):
         return [e for e in PortfolioSize]
 
 
-class Strategy:
-    def __init__(
-        self,
-        filters: list[Filter],
-        initial_sort: Sorting,
-        cutoff: Cutoff,
-        secondary_sort: Sorting,
-        portfolio_size: PortfolioSize,
-        position_size: PositionSize,
-    ):
-        self.filters: list[Filter] = filters
-        self.initial_sort: Sorting = initial_sort
-        self.cutoff: Cutoff = cutoff
-        self.secondary_sort: Sorting = secondary_sort
-        self.portfolio_size: PortfolioSize = portfolio_size
-        self.position_size: PositionSize = position_size
+class Strategy(BaseModel):
+    filters: list[Filter]
+    initial_sort: Sorting
+    cutoff: Cutoff
+    secondary_sort: Sorting
+    portfolio_size: PortfolioSize
+    position_size: PositionSize
+
+    class Config:
+        use_enum_values = True
 
     def __str__(self):
-        filter_names = ", ".join([filter.name for filter in self.filters])
+        filter_names = ", ".join([str(filter) for filter in self.filters])
         filters = f"Filters: [{filter_names}]"
-        initial_sort = f"Initial Sort: {self.initial_sort.name}"
-        cutoff = f"Cutoff: {self.cutoff.name}"
+        initial_sort = f"Initial Sort: {self.initial_sort}"
+        cutoff = f"Cutoff: {self.cutoff}"
         secondary_sort = f"Secondary Sort: {self.secondary_sort}"
-        portfolio_size = f"Portfolio Size: {self.portfolio_size.name}"
-        position_size = f"Position Size: {self.position_size.value}"
+        portfolio_size = f"Portfolio Size: {self.portfolio_size}"
+        position_size = f"Position Size: {self.position_size}"
 
         return "Strategy -> " + " | ".join(
             [

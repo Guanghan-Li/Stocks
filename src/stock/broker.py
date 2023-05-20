@@ -3,7 +3,13 @@ from time import sleep
 import os, math, subprocess, time
 import mplfinance as mpf
 from alpaca_trade_api.rest import *
+import alpaca_trade_api
 import alpaca_trade_api.rest_async
+# import os
+# os.chdir()
+# import alpaca_trade_api
+
+
 from peewee import *
 from pandas import DataFrame
 from src.stock.calculate.calculations import Calculations
@@ -55,7 +61,7 @@ class Broker:
 
         return prices
 
-    async def getPrices(self, asset, start_date: datetime, end_date: datetime):
+    async def getPrices(self, asset, start_date: datetime, end_date: datetime) -> Prices:
         start_date = start_date.strftime("%Y-%m-%d")
         end_date = end_date.strftime("%Y-%m-%d")
 
