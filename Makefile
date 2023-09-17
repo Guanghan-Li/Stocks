@@ -17,9 +17,13 @@ price-check:
 	@poetry run python3 price_check.py
 strat-check:
 	@poetry run python3 strategy_checker.py
+	@poetry run python3 main.py
 nuke:
 	@echo "Deleting env"
 	@sudo rm -r `poetry env info -p`
 	@rm poetry.lock
 main:
+	@poetry run python3 main.py
+strat-check2:
+	@poetry run python3 strat_check2.py
 	@poetry run python3 main.py

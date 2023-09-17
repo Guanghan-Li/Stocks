@@ -13,3 +13,4 @@ prices = broker.getPriceData("DIG", datetime(2021, 8, 9), datetime(2022, 8, 24))
 chart = Chart("DIG", 1.0, 3)
 chart.generate(prices.toSimpleDict())
 chart.toHtml("dig.html")
+

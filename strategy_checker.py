@@ -173,7 +173,7 @@ async def run_strategy(
     report_database: ReportDatabase, account_info: dict, strategy: Strategy
 ) -> StrategyResult:
     broker = Broker(account_info)
-    now = datetime(2023, 5, 10)
+    now = datetime(2023, 9, 6)
     # now = report_database.get_latest_date()
     later = now + relativedelta(weeks=1)
     report = report_database.get_reports(now, strategy, [])

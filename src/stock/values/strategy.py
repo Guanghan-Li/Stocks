@@ -136,9 +136,9 @@ class Sorting(list, Enum):
 
 
 class PortfolioSize(int, Enum):
-    TWO = 2
     FOUR = 4
     SIX = 6
+    EIGHT = 8
 
     @staticmethod
     def to_list() -> list["PortfolioSize"]:

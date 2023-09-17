@@ -66,7 +66,7 @@ async def main():
     strategies = getAllStrategies()
     # strategy = Strategy([Filter.TREND_UP], Sorting.ACCELERATION_UP, Cutoff.FIFTY, Sorting.TWO_YEAR_MOMENTUM_DOWN, PortfolioSize.SIX)
 
-    now = datetime.fromisoformat("2022-05-18")
+    now = datetime.fromisoformat("2022-09-14")
     # await checkStrategy(now, strategy)
     results = []
     announcements = announcement_database.listAnnouncements()

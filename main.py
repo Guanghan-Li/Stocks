@@ -72,7 +72,7 @@ async def main():
     strategy = Strategy.parse_file("best_strategy.json")
 
     print(strategy)
-    date = datetime(2023, 5, 17)
+    date = datetime(2023, 9, 13)
     results = report_database.get_reports(date, strategy, [])
     positions = get_positions(strategy, results)
 

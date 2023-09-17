@@ -117,7 +117,7 @@ signal.signal(signal.SIGABRT, killed)
 
 def main():
     can_log = True
-    end_date = datetime(2023, 5, 17)
+    end_date = datetime(2023, 9, 13)
     start_date = end_date - relativedelta(weeks=53*4)
     broker_actors = []
     task_manager = asys.createActor(TaskManagerActor)
